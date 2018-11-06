@@ -1,0 +1,9 @@
+<code_scheme name="image_downloader_formatter" version="173">
+  <codeStyleSettings language="Dart">
+    <option name="RIGHT_MARGIN" value="200" />
+    <option name="ALIGN_MULTILINE_PARAMETERS" value="true" />
+    <option name="ALIGN_MULTILINE_BINARY_OPERATION" value="true" />
+    <option name="ALIGN_MULTILINE_TERNARY_OPERATION" value="true" />
+    <option name="BINARY_OPERATION_SIGN_ON_NEXT_LINE" value="true" />
+  </codeStyleSettings>
+</code_scheme>
