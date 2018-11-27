@@ -7,6 +7,9 @@ class ImageDownloader {
   /// MethodChannel of image_downloader.
   static const MethodChannel _channel = const MethodChannel('plugins.ko2ic.com/image_downloader');
 
+  /// private constructor.
+  ImageDownloader._();
+
   /// Save the image of the specified [url] on each devices.
   ///
   /// ios will be saved in Photo Library.
