@@ -48,7 +48,7 @@ class _MyAppState extends State<MyApp> {
     bool isSuccess;
     try {
       isSuccess = await ImageDownloader.downloadImage("https://flutter.io/images/flutter-mark-square-100.png");
-    } on PlatformException catch (e) {
+    } on PlatformException catch (_) {
       isSuccess = false;
     }
 
