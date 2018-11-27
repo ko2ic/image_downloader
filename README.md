@@ -26,7 +26,12 @@ Add this permission in ```AndroidManifest.xml```.
 ## Example
 
 ```
-  Future<bool> downloadImage() => ImageDownloader.downloadImage("https://flutter.io/images/flutter-mark-square-100.png");
+bool isSuccess;
+try {
+  isSuccess = await ImageDownloader.downloadImage("https://flutter.io/images/flutter-mark-square-100.png");
+} on PlatformException catch (_) {
+  isSuccess = false;
+}
 ```
 
 True if saving succeeded.     
