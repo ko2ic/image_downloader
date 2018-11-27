@@ -15,7 +15,10 @@ A new flutter plugin project.
   s.source_files = 'Classes/**/*'
   s.public_header_files = 'Classes/**/*.h'
   s.dependency 'Flutter'
-
+  s.pod_target_xcconfig = {
+   'FRAMEWORK_SEARCH_PATHS' => '$(inherited) $(PODS_ROOT)/**',
+   'OTHER_LDFLAGS' => '$(inherited) -undefined dynamic_lookup'
+  }
   s.ios.deployment_target = '8.0'
 end
 
