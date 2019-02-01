@@ -1,3 +1,7 @@
+## 0.9.2
+
+* fix broken link of sample image.
+
 ## 0.9.1
 
 * Fix warnings of Dart Analysis.

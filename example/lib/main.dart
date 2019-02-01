@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,6 +14,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   bool _isSuccess = false;
+  String _message = "";
 
   @override
   void initState() {
@@ -30,7 +32,7 @@ class _MyAppState extends State<MyApp> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text('Running on: $_isSuccess\n'),
+              Text('Running on: $_isSuccess\n$_message'),
               RaisedButton(
                 onPressed: () {
                   _downloadImage();
@@ -47,7 +49,7 @@ class _MyAppState extends State<MyApp> {
   Future<void> _downloadImage() async {
     bool isSuccess;
     try {
-      isSuccess = await ImageDownloader.downloadImage("https://flutter.io/images/flutter-mark-square-100.png");
+      isSuccess = await ImageDownloader.downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter.jpg");
     } on PlatformException catch (_) {
       isSuccess = false;
     }
@@ -56,6 +58,8 @@ class _MyAppState extends State<MyApp> {
 
     setState(() {
       _isSuccess = isSuccess;
+      var location = Platform.isAndroid ? "Download Directory" : "Photo Library";
+      _message = 'Image saved in $location';
     });
   }
 }
