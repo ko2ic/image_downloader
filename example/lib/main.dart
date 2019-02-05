@@ -13,8 +13,10 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  bool _isSuccess = false;
   String _message = "";
+  String _path = "";
+  String _size = "";
+  String _mimeType = "";
 
   @override
   void initState() {
@@ -32,7 +34,10 @@ class _MyAppState extends State<MyApp> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text('Running on: $_isSuccess\n$_message'),
+              Text(_message),
+              Text(_size),
+              Text(_mimeType),
+              Text(_path),
               RaisedButton(
                 onPressed: () {
                   _downloadImage();
@@ -47,19 +52,34 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _downloadImage() async {
-    bool isSuccess;
+    String fileName;
+    String path;
+    int size;
+    String mimeType;
     try {
-      isSuccess = await ImageDownloader.downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter.jpg");
-    } on PlatformException catch (_) {
-      isSuccess = false;
+      String imageId = await ImageDownloader.downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter.png");
+      if (imageId == null) {
+        return;
+      }
+      fileName = await ImageDownloader.findName(imageId);
+      path = await ImageDownloader.findPath(imageId);
+      size = await ImageDownloader.findByteSize(imageId);
+      mimeType = await ImageDownloader.findMimeType(imageId);
+    } on PlatformException catch (error) {
+      setState(() {
+        _message = error.message;
+      });
+      return;
     }
 
     if (!mounted) return;
 
     setState(() {
-      _isSuccess = isSuccess;
       var location = Platform.isAndroid ? "Download Directory" : "Photo Library";
-      _message = 'Image saved in $location';
+      _message = 'Saved as "$fileName" in $location.\n';
+      _size = 'size:     $size';
+      _mimeType = 'mimeType: $mimeType';
+      _path = 'path:$path';
     });
   }
 }

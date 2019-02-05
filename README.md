@@ -26,14 +26,25 @@ Add this permission in ```AndroidManifest.xml```.
 ## Example
 
 ```
-bool isSuccess;
 try {
-  isSuccess = await ImageDownloader.downloadImage("https://flutter.io/images/flutter-mark-square-100.png");
-} on PlatformException catch (_) {
-  isSuccess = false;
+  // Saved with this method.
+  var imageId = await ImageDownloader.downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter.png");
+  if (imageId == null) {
+    return;
+  }
+
+  // Below is a method of obtaining saved image information.
+  var fileName = await ImageDownloader.findName(imageId);
+  var path = await ImageDownloader.findPath(imageId);
+  var size = await ImageDownloader.findByteSize(imageId);
+  var mimeType = await ImageDownloader.findMimeType(imageId);
+} on PlatformException catch (error) {
+  print(error)
 }
 ```
 
-True if saving succeeded.     
-False if not been granted permission.    
-Otherwise it is a PlatformException.
+The return value is as follows.
+
+* imageId of the saved image if saving succeeded.
+* null if not been granted permission.
+* Otherwise it is a PlatformException.

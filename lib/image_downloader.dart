@@ -15,10 +15,32 @@ class ImageDownloader {
   /// ios will be saved in Photo Library.
   /// Android will be saved in the download directory.
   ///
-  /// Returns `true` if saving succeeded.
-  /// Returns `false` if not been granted permission.
+  /// Returns imageId of the saved image if saving succeeded.
+  /// Returns null if not been granted permission.
   /// Otherwise it is a PlatformException.
-  static Future<bool> downloadImage(String url) async {
-    return await _channel.invokeMethod('downloadImage', <String, String>{'url': url}).then<bool>((dynamic result) => result);
+  ///
+  /// imageId is in case of Adroid,  MediaStore.Images.Media._ID, in case of ios, PHObjectPlaceholder#localIdentifier.
+  static Future<String> downloadImage(String url) async {
+    return await _channel.invokeMethod('downloadImage', <String, String>{'url': url}).then<String>((dynamic result) => result);
+  }
+
+  /// Acquire the saved image name.
+  static Future<String> findName(String imageId) async {
+    return await _channel.invokeMethod('findName', <String, String>{'imageId': imageId}).then<String>((dynamic result) => result);
+  }
+
+  /// Acquire the saved image path.
+  static Future<String> findPath(String imageId) async {
+    return await _channel.invokeMethod('findPath', <String, String>{'imageId': imageId}).then<String>((dynamic result) => result);
+  }
+
+  /// Acquire the saved image byte size.
+  static Future<int> findByteSize(String imageId) async {
+    return await _channel.invokeMethod('findByteSize', <String, String>{'imageId': imageId}).then<int>((dynamic result) => result);
+  }
+
+  /// Acquire the saved image mimeType.
+  static Future<String> findMimeType(String imageId) async {
+    return await _channel.invokeMethod('findMimeType', <String, String>{'imageId': imageId}).then<String>((dynamic result) => result);
   }
 }

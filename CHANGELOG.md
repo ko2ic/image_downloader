@@ -1,3 +1,9 @@
+## 0.11.0
+
+* **Breaking change**. Changed the return value from bool to imageId. 
+  You can acquire saved image information by using imageId.
+* Added findName, findPath, findByteSize, findMimeType.
+
 ## 0.10.0
 
 * **Breaking change**. Migrate from the deprecated original Android Support
