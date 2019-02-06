@@ -32,6 +32,7 @@ class ImageDownloderPermissionListener(private val activity: Activity) :
                     callback?.denied()
                 }
             }
+            else -> return false
         }
         return true
     }

@@ -1,3 +1,7 @@
+## 0.11.1
+
+* Fixed bug that does't work when using another Plugin using onRequestPermissionsResult.
+
 ## 0.11.0
 
 * **Breaking change**. Changed the return value from bool to imageId. 
