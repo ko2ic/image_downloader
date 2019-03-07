@@ -17,13 +17,15 @@ Add the following keys to your Info.plist file, located in <project root>/ios/Ru
   
 ### Android
 
-Add this permission in ```AndroidManifest.xml```. 
+Add this permission in ```AndroidManifest.xml```. (If you call ```AndroidDestinationType#inExternalFilesDir()```, This setting is not necessary.)
 
 ```
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 ```
 
 ## Example
+
+### Basic
 
 ```
 try {
@@ -48,6 +50,43 @@ The return value is as follows.
 * imageId of the saved image if saving succeeded.
 * null if not been granted permission.
 * Otherwise it is a PlatformException.
+
+### Custom
+
+You can specify the storage location.    
+(Currently, external storage is only supported on Android.)
+
+Three directories by default are provided.
+
+* AndroidDestinationType.directoryDownloads -> Environment.DIRECTORY_DOWNLOADS on Android
+* AndroidDestinationType.directoryPictures -> Environment.DIRECTORY_PICTURES on Android
+* AndroidDestinationType.directoryDCIM -> Environment.DIRECTORY_DCIM on Android
+
+In addition, there is also custom. 
+
+For example, the following sources is stored in ```/storage/emulated/0/sample/custom/sample.gif```.       
+(Depends on the device.)
+
+```
+await ImageDownloader.downloadImage(url,
+                                    destination: AndroidDestinationType.custom('sample')                                  
+                                    ..subDirectory("custom/sample.gif"),
+        );
+```
+
+For example, the following sources is stored in ```/storage/emulated/0/Android/data/<applicationId>/files/sample/custom/sample.gif```by calling ```inExternalFilesDir()``` .    
+(Depends on the device.) 
+ 
+```
+ await ImageDownloader.downloadImage(url,
+                                     destination: AndroidDestinationType.custom('sample')
+                                     ..inExternalFilesDir()
+                                     ..subDirectory("custom/sample.gif"),
+         );
+```
+ 
+Note: ```inExternalFilesDir()``` will not require ```WRITE_EXTERNAL_STORAGE``` permission, but downloaded images will also be deleted when uninstalling.
+
 
 ## Trouble Shooting
 

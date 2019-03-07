@@ -1,3 +1,7 @@
+## 0.12.0 
+
+* Be able to specify the destination in external storage on Android. 
+
 ## 0.11.2+1
 
 * Update Document.

@@ -22,7 +22,7 @@ class Downloader(private val context: Context, private val request: DownloadMana
         onNext: (DownloadStatus) -> Unit,
         onError: (DownloadFailedException) -> Unit,
         onComplete: () -> Unit
-    ): Unit {
+    ) {
         receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 intent ?: return
@@ -36,7 +36,7 @@ class Downloader(private val context: Context, private val request: DownloadMana
         downloadId = manager.enqueue(request)
     }
 
-    private fun cancel() {
+    fun cancel() {
         if (downloadId != null) {
             manager.remove(downloadId!!)
         }
@@ -96,7 +96,9 @@ class Downloader(private val context: Context, private val request: DownloadMana
                 DownloadManager.STATUS_SUCCESSFUL -> {
                     onNext(DownloadStatus.Successful(requestResult))
                     onComplete()
-                    cancel()
+                    receiver?.let {
+                        context.unregisterReceiver(it)
+                    }
                 }
             }
         }

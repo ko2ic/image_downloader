@@ -17,6 +17,7 @@ class _MyAppState extends State<MyApp> {
   String _path = "";
   String _size = "";
   String _mimeType = "";
+  File _imageFile;
 
   @override
   void initState() {
@@ -31,33 +32,55 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(_message),
-              Text(_size),
-              Text(_mimeType),
-              Text(_path),
-              RaisedButton(
-                onPressed: () {
-                  _downloadImage();
-                },
-                child: Text("save image."),
-              ),
-            ],
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(_message),
+                Text(_size),
+                Text(_mimeType),
+                Text(_path),
+                RaisedButton(
+                  onPressed: () {
+                    _downloadImage();
+                  },
+                  child: Text("default destination"),
+                ),
+                RaisedButton(
+                  onPressed: () {
+                    _downloadImage(
+                      destination: AndroidDestinationType.directoryPictures
+                        ..inExternalFilesDir()
+                        ..subDirectory("sample.gif"),
+                    );
+                  },
+                  child: Text("custom destination(only android)"),
+                ),
+                (_imageFile == null) ? Container() : Image.file(_imageFile)
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Future<void> _downloadImage() async {
+  Future<void> _downloadImage({AndroidDestinationType destination}) async {
     String fileName;
     String path;
     int size;
     String mimeType;
     try {
-      String imageId = await ImageDownloader.downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter.png");
+      String imageId;
+      if (destination == null) {
+        imageId = await ImageDownloader.downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter.png");
+      } else {
+        imageId = await ImageDownloader.downloadImage(
+          "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter.png",
+          destination: destination,
+        );
+      }
+
       if (imageId == null) {
         return;
       }
@@ -75,11 +98,13 @@ class _MyAppState extends State<MyApp> {
     if (!mounted) return;
 
     setState(() {
-      var location = Platform.isAndroid ? "Download Directory" : "Photo Library";
+      var location = Platform.isAndroid ? "Directory" : "Photo Library";
       _message = 'Saved as "$fileName" in $location.\n';
       _size = 'size:     $size';
       _mimeType = 'mimeType: $mimeType';
       _path = 'path:$path';
+
+      _imageFile = File(path);
     });
   }
 }
