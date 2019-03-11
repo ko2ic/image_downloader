@@ -3,6 +3,7 @@ import MobileCoreServices
 import Photos
 import UIKit
 
+@objcMembers
 public class SwiftImageDownloaderPlugin: NSObject, FlutterPlugin {
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "plugins.ko2ic.com/image_downloader", binaryMessenger: registrar.messenger())
