@@ -1,3 +1,7 @@
+## 0.11.2
+
+* Bump Swift Version to 4.2.
+
 ## 0.11.1
 
 * Fixed bug that does't work when using another Plugin using onRequestPermissionsResult.
