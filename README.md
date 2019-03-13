@@ -48,3 +48,7 @@ The return value is as follows.
 * imageId of the saved image if saving succeeded.
 * null if not been granted permission.
 * Otherwise it is a PlatformException.
+
+## Trouble Shooting
+
+https://github.com/ko2ic/image_downloader/wiki#trouble-shooting

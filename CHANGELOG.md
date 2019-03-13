@@ -1,3 +1,7 @@
+## 0.11.2+1
+
+* Update Document.
+
 ## 0.11.2
 
 * Bump Swift Version to 4.2.
