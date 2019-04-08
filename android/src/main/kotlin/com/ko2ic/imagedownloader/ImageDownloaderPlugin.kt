@@ -105,7 +105,7 @@ class ImageDownloaderPlugin(
 
     private fun findMimeType(imageId: String, context: Context): String {
         val data = findFileData(imageId, context)
-        return data.mimetype
+        return data.mimeType
     }
 
     private fun findFileData(imageId: String, context: Context): FileData {
@@ -119,12 +119,13 @@ class ImageDownloaderPlugin(
                 arrayOf(imageId),
                 null
             ).use {
+                if (it == null) throw IllegalStateException("$imageId is an imageId that does not exist.")
                 it.moveToFirst()
                 val path = it.getString(it.getColumnIndex(MediaStore.Images.Media.DATA))
                 val name = it.getString(it.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME))
                 val size = it.getInt(it.getColumnIndex(MediaStore.Images.Media.SIZE))
-                val mimetype = it.getString(it.getColumnIndex(MediaStore.Images.Media.MIME_TYPE))
-                FileData(path = path, name = name, byteSize = size, mimetype = mimetype)
+                val mimeType = it.getString(it.getColumnIndex(MediaStore.Images.Media.MIME_TYPE))
+                FileData(path = path, name = name, byteSize = size, mimeType = mimeType)
             }
         } else {
             val db = TemporaryDatabase(context).readableDatabase
@@ -143,8 +144,8 @@ class ImageDownloaderPlugin(
                     val path = it.getString(it.getColumnIndex(MediaStore.Images.Media.DATA))
                     val name = it.getString(it.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME))
                     val size = it.getInt(it.getColumnIndex(MediaStore.Images.Media.SIZE))
-                    val mimetype = it.getString(it.getColumnIndex(MediaStore.Images.Media.MIME_TYPE))
-                    FileData(path = path, name = name, byteSize = size, mimetype = mimetype)
+                    val mimeType = it.getString(it.getColumnIndex(MediaStore.Images.Media.MIME_TYPE))
+                    FileData(path = path, name = name, byteSize = size, mimeType = mimeType)
                 }
         }
     }
@@ -181,6 +182,7 @@ class ImageDownloaderPlugin(
             val downloader = Downloader(context, request)
 
             downloader.execute(onNext = {
+                Log.d("downloader", it.result.toString())
                 when (it) {
                     is Downloader.DownloadStatus.Failed -> Log.d("downloader", it.reason)
                     is Downloader.DownloadStatus.Paused -> Log.d("downloader", it.reason)
@@ -210,7 +212,6 @@ class ImageDownloaderPlugin(
                 val newFile = if (inPublicDir) {
                     File("${Environment.getExternalStoragePublicDirectory(directory)}/$fileName")
                 } else {
-                    val path = context.getExternalFilesDir(directory).path
                     File("${context.getExternalFilesDir(directory)}/$fileName")
                 }
 
@@ -260,6 +261,7 @@ class ImageDownloaderPlugin(
                     arrayOf(file.absolutePath),
                     null
                 ).use {
+                    if (it == null) throw java.lang.IllegalStateException("${file.absolutePath} is not found.")
                     it.moveToFirst()
                     it.getString(it.getColumnIndex(MediaStore.Images.Media._ID))
                 }
@@ -276,7 +278,7 @@ class ImageDownloaderPlugin(
         }
     }
 
-    private data class FileData(val path: String, val name: String, val byteSize: Int, val mimetype: String)
+    private data class FileData(val path: String, val name: String, val byteSize: Int, val mimeType: String)
 
     class TemporaryDatabase(context: Context) :
         SQLiteOpenHelper(context, TABLE_NAME, null, DATABASE_VERSION) {

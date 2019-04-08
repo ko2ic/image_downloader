@@ -105,7 +105,7 @@ class Downloader(private val context: Context, private val request: DownloadMana
         cursor.close()
     }
 
-    fun createRequestResult(id: Long, cursor: Cursor): RequestResult =
+    private fun createRequestResult(id: Long, cursor: Cursor): RequestResult =
         RequestResult(
             id = id,
             remoteUri = cursor.getString(cursor.getColumnIndex(COLUMN_URI)),
@@ -116,7 +116,7 @@ class Downloader(private val context: Context, private val request: DownloadMana
             description = cursor.getString(cursor.getColumnIndex(COLUMN_DESCRIPTION))
         )
 
-    sealed class DownloadStatus(result: RequestResult) {
+    sealed class DownloadStatus(val result: RequestResult) {
         class Successful(result: RequestResult) : DownloadStatus(result)
         class Running(result: RequestResult) : DownloadStatus(result)
         class Pending(result: RequestResult) : DownloadStatus(result)
