@@ -1,3 +1,8 @@
+## 0.12.1
+
+* Fix to returns when not been granted permission on Android. 
+* Fix Kotlin's warning.
+
 ## 0.12.0 
 
 * Be able to specify the destination in external storage on Android. 
