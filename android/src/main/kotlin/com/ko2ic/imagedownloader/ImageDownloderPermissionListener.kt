@@ -22,6 +22,7 @@ class ImageDownloderPermissionListener(private val activity: Activity) :
 
         if (!isPermissionGranted(permissions)) {
             // when select deny.
+            callback?.denied()
             return false
         }
         when (requestCode) {
