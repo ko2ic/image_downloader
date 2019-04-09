@@ -1,3 +1,7 @@
+## 0.13.1
+
+* Fix to return correct file path on iOS.
+
 ## 0.13.0
 
 * Returned as code of PlatformException in case of Http Status Code error.(e.g. 404) 
