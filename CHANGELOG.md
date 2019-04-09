@@ -1,3 +1,8 @@
+## 0.13.0
+
+* Returned as code of PlatformException in case of Http Status Code error.(e.g. 404) 
+* Delete remaining files in case of errors on Android.
+
 ## 0.12.1
 
 * Fix to returns when not been granted permission on Android. 

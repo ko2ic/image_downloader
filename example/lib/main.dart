@@ -56,6 +56,12 @@ class _MyAppState extends State<MyApp> {
                   },
                   child: Text("custom destination(only android)"),
                 ),
+                RaisedButton(
+                  onPressed: () {
+                    _downloadImage(whenError: true);
+                  },
+                  child: Text("404 error"),
+                ),
                 (_imageFile == null) ? Container() : Image.file(_imageFile)
               ],
             ),
@@ -65,20 +71,32 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  Future<void> _downloadImage({AndroidDestinationType destination}) async {
+  Future<void> _downloadImage({AndroidDestinationType destination, bool whenError = false}) async {
     String fileName;
     String path;
     int size;
     String mimeType;
     try {
       String imageId;
-      if (destination == null) {
-        imageId = await ImageDownloader.downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter.png");
+
+      if (whenError) {
+        imageId = await ImageDownloader.downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter_no.png").catchError((error) {
+          if (error is PlatformException && error.code == "404") {
+            print("Not Found Error.");
+          }
+          print(error);
+        }).timeout(Duration(seconds: 10), onTimeout: () {
+          print("timeout");
+        });
       } else {
-        imageId = await ImageDownloader.downloadImage(
-          "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter.png",
-          destination: destination,
-        );
+        if (destination == null) {
+          imageId = await ImageDownloader.downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter.png");
+        } else {
+          imageId = await ImageDownloader.downloadImage(
+            "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter.png",
+            destination: destination,
+          );
+        }
       }
 
       if (imageId == null) {
