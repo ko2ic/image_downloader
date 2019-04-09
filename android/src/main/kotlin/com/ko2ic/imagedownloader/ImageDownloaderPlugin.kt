@@ -40,6 +40,8 @@ class ImageDownloaderPlugin(
 
             channel.setMethodCallHandler(ImageDownloaderPlugin(registrar, listener))
         }
+
+        private const val LOGGER_TAG = "image_downloader"
     }
 
     private var inPublicDir: Boolean = true
@@ -182,14 +184,14 @@ class ImageDownloaderPlugin(
             val downloader = Downloader(context, request)
 
             downloader.execute(onNext = {
-                Log.d("downloader", it.result.toString())
+                Log.d(LOGGER_TAG, it.result.toString())
                 when (it) {
-                    is Downloader.DownloadStatus.Failed -> Log.d("downloader", it.reason)
-                    is Downloader.DownloadStatus.Paused -> Log.d("downloader", it.reason)
+                    is Downloader.DownloadStatus.Failed -> Log.d(LOGGER_TAG, it.reason)
+                    is Downloader.DownloadStatus.Paused -> Log.d(LOGGER_TAG, it.reason)
                 }
 
             }, onError = {
-                result.error(it.message, null, null)
+                result.error(it.code, it.message, null)
             }, onComplete = {
 
                 val file = if (inPublicDir) {

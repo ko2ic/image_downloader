@@ -63,19 +63,47 @@ class Downloader(private val context: Context, private val request: DownloadMana
             when (status) {
                 DownloadManager.STATUS_FAILED -> {
                     val failedReason = when (reason) {
-                        ERROR_CANNOT_RESUME -> "ERROR_CANNOT_RESUME"
-                        ERROR_DEVICE_NOT_FOUND -> "ERROR_DEVICE_NOT_FOUND"
-                        ERROR_FILE_ALREADY_EXISTS -> "ERROR_FILE_ALREADY_EXISTS"
-                        ERROR_FILE_ERROR -> "ERROR_FILE_ERROR"
-                        ERROR_HTTP_DATA_ERROR -> "ERROR_HTTP_DATA_ERROR"
-                        ERROR_INSUFFICIENT_SPACE -> "ERROR_INSUFFICIENT_SPACE"
-                        ERROR_TOO_MANY_REDIRECTS -> "ERROR_TOO_MANY_REDIRECTS"
-                        ERROR_UNHANDLED_HTTP_CODE -> "ERROR_UNHANDLED_HTTP_CODE"
-                        ERROR_UNKNOWN -> "ERROR_UNKNOWN"
-                        else -> "ERROR_UNKNOWN"
+                        ERROR_CANNOT_RESUME -> Pair(
+                            "ERROR_CANNOT_RESUME",
+                            "Some possibly transient error occurred but we can't resume the download."
+                        )
+                        ERROR_DEVICE_NOT_FOUND -> Pair(
+                            "ERROR_DEVICE_NOT_FOUND",
+                            "No external storage device was found."
+                        )
+                        ERROR_FILE_ALREADY_EXISTS -> Pair(
+                            "ERROR_FILE_ALREADY_EXISTS",
+                            "The requested destination file already exists (the download manager will not overwrite an existing file)."
+                        )
+                        ERROR_FILE_ERROR -> Pair(
+                            "ERROR_FILE_ERROR",
+                            "A storage issue arises which doesn't fit under any other error code."
+                        )
+                        ERROR_HTTP_DATA_ERROR -> Pair(
+                            "ERROR_HTTP_DATA_ERROR",
+                            "An error receiving or processing data occurred at the HTTP level."
+                        )
+                        ERROR_INSUFFICIENT_SPACE -> Pair(
+                            "ERROR_INSUFFICIENT_SPACE",
+                            "There was insufficient storage space."
+                        )
+                        ERROR_TOO_MANY_REDIRECTS -> Pair("ERROR_TOO_MANY_REDIRECTS", "There were too many redirects.")
+                        ERROR_UNHANDLED_HTTP_CODE -> Pair(
+                            "ERROR_UNHANDLED_HTTP_CODE",
+                            "An HTTP code was received that download manager can't handle."
+                        )
+                        ERROR_UNKNOWN -> Pair(
+                            "ERROR_UNKNOWN",
+                            "The download has completed with an error that doesn't fit under any other error code."
+                        )
+                        in 400..599 -> Pair(reason.toString(), "HTTP status code error.")
+                        else -> Pair(reason.toString(), "Unknown.")
                     }
-                    onNext(DownloadStatus.Failed(requestResult, failedReason))
-                    onError(DownloadFailedException(failedReason))
+                    if (downloadId != null) {
+                        manager.remove(downloadId!!)
+                    }
+                    onNext(DownloadStatus.Failed(requestResult, failedReason.first))
+                    onError(DownloadFailedException(failedReason.first, failedReason.second))
                 }
                 DownloadManager.STATUS_PAUSED -> {
                     val pausedReason = when (reason) {
@@ -124,7 +152,7 @@ class Downloader(private val context: Context, private val request: DownloadMana
         class Failed(result: RequestResult, val reason: String) : DownloadStatus(result)
     }
 
-    class DownloadFailedException(message: String) : Throwable(message)
+    class DownloadFailedException(val code: String, message: String) : Throwable(message)
 }
 
 data class RequestResult(

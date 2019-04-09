@@ -73,6 +73,13 @@ public class SwiftImageDownloaderPlugin: NSObject, FlutterPlugin {
                 result(FlutterError(code: "request_error", message: error?.localizedDescription, details: error))
                 return
             } else {
+                if let statusCode = (urlResponse as? HTTPURLResponse)?.statusCode {
+                    if 400...599 ~= statusCode {
+                        result(FlutterError(code: "\(statusCode)", message: "HTTP status code error.", details: nil))
+                        return
+                    }
+                }
+
                 guard let data = fileData else {
                     result(FlutterError(code: "data_error", message: "response data is nil", details: nil))
                     return
