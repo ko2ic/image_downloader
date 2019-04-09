@@ -43,6 +43,7 @@ class Downloader(private val context: Context, private val request: DownloadMana
 
         receiver?.let {
             context.unregisterReceiver(it)
+            receiver = null
         }
     }
 
@@ -99,10 +100,8 @@ class Downloader(private val context: Context, private val request: DownloadMana
                         in 400..599 -> Pair(reason.toString(), "HTTP status code error.")
                         else -> Pair(reason.toString(), "Unknown.")
                     }
-                    if (downloadId != null) {
-                        manager.remove(downloadId!!)
-                    }
                     onNext(DownloadStatus.Failed(requestResult, failedReason.first))
+                    cancel()
                     onError(DownloadFailedException(failedReason.first, failedReason.second))
                 }
                 DownloadManager.STATUS_PAUSED -> {

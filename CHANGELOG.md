@@ -1,3 +1,7 @@
+## 0.13.2
+
+* Fix crash when calling ```downloadImage()``` after getting HTTP error on Android.
+
 ## 0.13.1
 
 * Fix to return correct file path on iOS.
