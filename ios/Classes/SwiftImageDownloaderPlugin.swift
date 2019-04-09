@@ -194,7 +194,7 @@ public class SwiftImageDownloaderPlugin: NSObject, FlutterPlugin {
         let asset = PHAsset.fetchAssets(withLocalIdentifiers: [imageId], options: nil).firstObject!
         asset.requestContentEditingInput(with: PHContentEditingInputRequestOptions()) { input, _ in
             let url = input?.fullSizeImageURL
-            completion(url!.absoluteString)
+            completion(url!.path)
         }
     }
 
