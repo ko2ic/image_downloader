@@ -201,8 +201,10 @@ class ImageDownloaderPlugin(
                 }
 
                 val stream = BufferedInputStream(FileInputStream(file))
-                val mimeType = URLConnection.guessContentTypeFromStream(stream)
-
+                var mimeType = URLConnection.guessContentTypeFromStream(stream)
+                if(mimeType == null){
+                    mimeType = URLConnection.guessContentTypeFromName(url)
+                }
                 val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
 
                 val fileName = when {
