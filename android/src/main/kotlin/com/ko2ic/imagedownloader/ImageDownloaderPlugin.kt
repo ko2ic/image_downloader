@@ -219,7 +219,7 @@ class ImageDownloaderPlugin(
 
                 file.renameTo(newFile)
                 val newMimeType = mimeType
-                    ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(file.extension)
+                    ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(file.extension) ?: ""
                 val imageId = saveToDatabase(newFile, newMimeType, inPublicDir)
 
                 result.success(imageId)

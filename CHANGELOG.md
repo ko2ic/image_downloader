@@ -1,3 +1,7 @@
+## 0.13.3
+
+* Fix crash when MimeType cannot be determined.
+
 ## 0.13.2
 
 * Fix crash when calling ```downloadImage()``` after getting HTTP error on Android.
