@@ -1,3 +1,7 @@
+## 0.14.0
+
+* Add feature to get progress value.
+
 ## 0.13.4
 
 * Fix crash when MimeType cannot be determined.   

@@ -7,8 +7,20 @@ import UIKit
 public class SwiftImageDownloaderPlugin: NSObject, FlutterPlugin {
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "plugins.ko2ic.com/image_downloader", binaryMessenger: registrar.messenger())
-        let instance = SwiftImageDownloaderPlugin()
+        let instance = SwiftImageDownloaderPlugin(channel: channel)
         registrar.addMethodCallDelegate(instance, channel: channel)
+    }
+
+    let channel: FlutterMethodChannel
+    var result: FlutterResult!
+    var fileData: NSMutableData = NSMutableData()
+    var session: URLSession?
+    var dataTask: URLSessionDataTask?
+    var expectedContentLength = 0
+    var progress: Float = 0.0
+
+    init(channel: FlutterMethodChannel) {
+        self.channel = channel
     }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -68,44 +80,52 @@ public class SwiftImageDownloaderPlugin: NSObject, FlutterPlugin {
     }
 
     private func downloadImage(_ url: String, _ result: @escaping FlutterResult) {
-        let task = URLSession.shared.dataTask(with: URL(string: url)!, completionHandler: { (fileData: Data?, urlResponse: URLResponse?, error: Error?) in
-            if error != nil {
-                result(FlutterError(code: "request_error", message: error?.localizedDescription, details: error))
-                return
-            } else {
-                if let statusCode = (urlResponse as? HTTPURLResponse)?.statusCode {
-                    if 400...599 ~= statusCode {
-                        result(FlutterError(code: "\(statusCode)", message: "HTTP status code error.", details: nil))
-                        return
-                    }
-                }
-
-                guard let data = fileData else {
-                    result(FlutterError(code: "data_error", message: "response data is nil", details: nil))
-                    return
-                }
-                var values: UInt8 = 0
-                data.copyBytes(to: &values, count: 1)
-                switch values {
-                case 0xFF:
-                    // image/jpeg
-                    self.saveImage(data, result: result)
-                case 0x89:
-                    // image/png
-                    self.saveImage(data, result: result)
-                case 0x47:
-                    // image/gif
-                    self.saveGif(data: data, name: urlResponse?.suggestedFilename, result: result)
-                case 0x49, 0x4D:
-                    // image/tiff
-                    self.saveImage(data, result: result)
-                default:
-                    self.saveImage(data, result: result)
-                }
-            }
-        })
+        let session = URLSession(configuration: URLSessionConfiguration.default, delegate: self, delegateQueue: OperationQueue.main)
+        let task = session.dataTask(with: URL(string: url)!)
         task.resume()
+        self.result = result
     }
+
+//    private func downloadImage(_ url: String, _ result: @escaping FlutterResult) {
+//        let session = URLSession(configuration: URLSessionConfiguration.default, delegate: self, delegateQueue: OperationQueue.main)
+//        let task = session.dataTask(with: URL(string: url)!, completionHandler: { (fileData: Data?, urlResponse: URLResponse?, error: Error?) in
+//            if error != nil {
+//                result(FlutterError(code: "request_error", message: error?.localizedDescription, details: error))
+//                return
+//            } else {
+//                if let statusCode = (urlResponse as? HTTPURLResponse)?.statusCode {
+//                    if 400 ... 599 ~= statusCode {
+//                        result(FlutterError(code: "\(statusCode)", message: "HTTP status code error.", details: nil))
+//                        return
+//                    }
+//                }
+//
+//                guard let data = fileData else {
+//                    result(FlutterError(code: "data_error", message: "response data is nil", details: nil))
+//                    return
+//                }
+//                var values: UInt8 = 0
+//                data.copyBytes(to: &values, count: 1)
+//                switch values {
+//                case 0xFF:
+//                    // image/jpeg
+//                    self.saveImage(data, result: result)
+//                case 0x89:
+//                    // image/png
+//                    self.saveImage(data, result: result)
+//                case 0x47:
+//                    // image/gif
+//                    self.saveGif(data: data, name: urlResponse?.suggestedFilename, result: result)
+//                case 0x49, 0x4D:
+//                    // image/tiff
+//                    self.saveImage(data, result: result)
+//                default:
+//                    self.saveImage(data, result: result)
+//                }
+//            }
+//        })
+//        task.resume()
+//    }
 
     private func saveImage(_ data: Data, result: @escaping FlutterResult) {
         guard let image = UIImage(data: data) else {
@@ -215,5 +235,60 @@ public class SwiftImageDownloaderPlugin: NSObject, FlutterPlugin {
             let mimeType: String = UTTypeCopyPreferredTagWithClass(uti! as CFString, kUTTagClassMIMEType)!.takeRetainedValue() as String
             completion(mimeType)
         }
+    }
+}
+
+extension SwiftImageDownloaderPlugin: URLSessionDataDelegate {
+    public func urlSession(_: URLSession, dataTask _: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+        progress = 0.0
+        fileData.length = 0
+        expectedContentLength = Int(response.expectedContentLength)
+        completionHandler(URLSession.ResponseDisposition.allow)
+    }
+
+    public func urlSession(_: URLSession, dataTask _: URLSessionDataTask, didReceive data: Data) {
+        fileData.append(data)
+        let percentageDownloaded = Float(fileData.count) / Float(expectedContentLength)
+        progress = percentageDownloaded
+
+        channel.invokeMethod("onProgressUpdate", arguments: ["progress": Int(progress * 100)])
+    }
+}
+
+extension SwiftImageDownloaderPlugin: URLSessionDelegate {
+    public func urlSession(_: URLSession, task downloadTask: URLSessionTask, didCompleteWithError error: Error?) {
+        if error != nil {
+            result(FlutterError(code: "request_error", message: error?.localizedDescription, details: error))
+            result = nil
+            return
+        }
+        if let statusCode = (downloadTask.response as? HTTPURLResponse)?.statusCode {
+            if 400 ... 599 ~= statusCode {
+                result(FlutterError(code: "\(statusCode)", message: "HTTP status code error.", details: nil))
+                result = nil
+                return
+            }
+        }
+        let data = fileData as Data
+
+        var values: UInt8 = 0
+        data.copyBytes(to: &values, count: 1)
+        switch values {
+        case 0xFF:
+            // image/jpeg
+            saveImage(data, result: result)
+        case 0x89:
+            // image/png
+            saveImage(data, result: result)
+        case 0x47:
+            // image/gif
+            saveGif(data: data, name: (downloadTask.response as? HTTPURLResponse)?.suggestedFilename, result: result)
+        case 0x49, 0x4D:
+            // image/tiff
+            saveImage(data, result: result)
+        default:
+            saveImage(data, result: result)
+        }
+        result = nil
     }
 }

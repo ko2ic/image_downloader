@@ -88,6 +88,25 @@ For example, the following sources is stored in ```/storage/emulated/0/Android/d
 Note: ```inExternalFilesDir()``` will not require ```WRITE_EXTERNAL_STORAGE``` permission, but downloaded images will also be deleted when uninstalling.
 
 
+##  Progress
+
+You can get the progress value.   
+Note: On iOS, ```onProgressUpdate``` cannot get imageId.
+
+```dart
+  @override
+  void initState() {
+    super.initState();
+
+    ImageDownloader.callback(onProgressUpdate: (String imageId, int progress) {
+      setState(() {
+        _progress = progress;
+      });
+    });
+  }
+```
+
+
 ## Trouble Shooting
 
 https://github.com/ko2ic/image_downloader/wiki#trouble-shooting

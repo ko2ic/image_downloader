@@ -22,8 +22,7 @@ class ImageDownloader {
   /// Otherwise it is a PlatformException.
   ///
   /// imageId is in case of Adroid,  MediaStore.Images.Media._ID, in case of ios, PHObjectPlaceholder#localIdentifier.
-  static Future<String> downloadImage(
-    String url, {
+  static Future<String> downloadImage(String url, {
     AndroidDestinationType destination,
   }) async {
     return await _channel.invokeMethod('downloadImage', <String, dynamic>{
@@ -32,6 +31,18 @@ class ImageDownloader {
       'directory': destination?._directory,
       'subDirectory': destination?._subDirectory,
     }).then<String>((dynamic result) => result);
+  }
+
+  /// You can get the progress with [onProgressUpdate].
+  /// On iOS, cannot get imageId.
+  static void callback({Function(String, int) onProgressUpdate}) {
+    _channel.setMethodCallHandler((MethodCall call) {
+      if (call.method == 'onProgressUpdate') {
+        String id = call.arguments['image_id'] as String;
+        int progress = call.arguments['progress'] as int;
+        onProgressUpdate(id, progress);
+      }
+    });
   }
 
   /// Acquire the saved image name.
@@ -69,10 +80,10 @@ class AndroidDestinationType {
   /// For example, ```/storage/emulated/0/Android/data/<applicationId>/files``` .
   /// [subDirectory] can contain a file name.
   factory AndroidDestinationType.custom({
-    bool inPublicDir,
-    @required String directory,
-    String subDirectory,
-  }) {
+                                          bool inPublicDir,
+                                          @required String directory,
+                                          String subDirectory,
+                                        }) {
     return AndroidDestinationType._internal(directory)
       .._setInPublicDir(inPublicDir)
       ..subDirectory(subDirectory);

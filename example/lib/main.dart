@@ -18,10 +18,17 @@ class _MyAppState extends State<MyApp> {
   String _size = "";
   String _mimeType = "";
   File _imageFile;
+  int _progress = 0;
 
   @override
   void initState() {
     super.initState();
+
+    ImageDownloader.callback(onProgressUpdate: (String imageId, int progress) {
+      setState(() {
+        _progress = progress;
+      });
+    });
   }
 
   @override
@@ -36,6 +43,7 @@ class _MyAppState extends State<MyApp> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
+                Text('Progress: $_progress %'),
                 Text(_message),
                 Text(_size),
                 Text(_mimeType),
@@ -84,13 +92,16 @@ class _MyAppState extends State<MyApp> {
           if (error is PlatformException && error.code == "404") {
             print("Not Found Error.");
           }
+          setState(() {
+            _message = error.toString();
+          });
           print(error);
         }).timeout(Duration(seconds: 10), onTimeout: () {
           print("timeout");
         });
       } else {
         if (destination == null) {
-          imageId = await ImageDownloader.downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter.png");
+          imageId = await ImageDownloader.downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/bigsize.jpg");
         } else {
           imageId = await ImageDownloader.downloadImage(
             "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter.png",

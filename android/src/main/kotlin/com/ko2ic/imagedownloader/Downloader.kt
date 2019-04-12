@@ -34,6 +34,45 @@ class Downloader(private val context: Context, private val request: DownloadMana
         }
         context.registerReceiver(receiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
         downloadId = manager.enqueue(request)
+
+        val downloadId = this.downloadId
+
+        if (downloadId != null) {
+            Thread(Runnable {
+                var downloading = true
+
+                while (downloading) {
+
+                    val q = DownloadManager.Query()
+                    q.setFilterById(downloadId)
+
+                    val cursor = manager.query(q)
+                    cursor.moveToFirst()
+
+                    if (cursor.count == 0) {
+                        cursor.close()
+                        break
+                    }
+
+                    val downloadedBytes = cursor.getInt(
+                        cursor.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
+                    )
+                    val totalBytes = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
+
+                    when (cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS))) {
+                        DownloadManager.STATUS_SUCCESSFUL -> downloading = false
+                        DownloadManager.STATUS_FAILED -> downloading = false
+                    }
+
+                    val progress = ((downloadedBytes * 100) / totalBytes)
+
+                    onNext(DownloadStatus.Running(createRequestResult(downloadId, cursor), progress))
+
+                    cursor.close()
+                    Thread.sleep(500)
+                }
+            }).start()
+        }
     }
 
     fun cancel() {
@@ -117,9 +156,6 @@ class Downloader(private val context: Context, private val request: DownloadMana
                 DownloadManager.STATUS_PENDING -> {
                     onNext(DownloadStatus.Pending(requestResult))
                 }
-                DownloadManager.STATUS_RUNNING -> {
-                    onNext(DownloadStatus.Running(requestResult))
-                }
                 DownloadManager.STATUS_SUCCESSFUL -> {
                     onNext(DownloadStatus.Successful(requestResult))
                     onComplete()
@@ -145,7 +181,7 @@ class Downloader(private val context: Context, private val request: DownloadMana
 
     sealed class DownloadStatus(val result: RequestResult) {
         class Successful(result: RequestResult) : DownloadStatus(result)
-        class Running(result: RequestResult) : DownloadStatus(result)
+        class Running(result: RequestResult, val progress: Int) : DownloadStatus(result)
         class Pending(result: RequestResult) : DownloadStatus(result)
         class Paused(result: RequestResult, val reason: String) : DownloadStatus(result)
         class Failed(result: RequestResult, val reason: String) : DownloadStatus(result)
