@@ -20,10 +20,17 @@ class _MyAppState extends State<MyApp> {
   String _size = "";
   String _mimeType = "";
   File _imageFile;
+  int _progress = 0;
 
   @override
   void initState() {
     super.initState();
+
+    ImageDownloader.callback(onProgressUpdate: (String imageId, int progress) {
+      setState(() {
+        _progress = progress;
+      });
+    });
   }
 
   @override
@@ -38,6 +45,7 @@ class _MyAppState extends State<MyApp> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
+                Text('Progress: $_progress %'),
                 Text(_message),
                 Text(_size),
                 Text(_mimeType),
@@ -58,6 +66,12 @@ class _MyAppState extends State<MyApp> {
                   },
                   child: Text("custom destination(only android)"),
                 ),
+                RaisedButton(
+                  onPressed: () {
+                    _downloadImage(whenError: true);
+                  },
+                  child: Text("404 error"),
+                ),
                 (_imageFile == null) ? Container() : Image.file(_imageFile)
               ],
             ),
@@ -67,20 +81,35 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  Future<void> _downloadImage({AndroidDestinationType destination}) async {
+  Future<void> _downloadImage({AndroidDestinationType destination, bool whenError = false}) async {
     String fileName;
     String path;
     int size;
     String mimeType;
     try {
       String imageId;
-      if (destination == null) {
-        imageId = await ImageDownloader.downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter.png");
+
+      if (whenError) {
+        imageId = await ImageDownloader.downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter_no.png").catchError((error) {
+          if (error is PlatformException && error.code == "404") {
+            print("Not Found Error.");
+          }
+          setState(() {
+            _message = error.toString();
+          });
+          print(error);
+        }).timeout(Duration(seconds: 10), onTimeout: () {
+          print("timeout");
+        });
       } else {
-        imageId = await ImageDownloader.downloadImage(
-          "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter.png",
-          destination: destination,
-        );
+        if (destination == null) {
+          imageId = await ImageDownloader.downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/bigsize.jpg");
+        } else {
+          imageId = await ImageDownloader.downloadImage(
+            "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter.png",
+            destination: destination,
+          );
+        }
       }
 
       if (imageId == null) {

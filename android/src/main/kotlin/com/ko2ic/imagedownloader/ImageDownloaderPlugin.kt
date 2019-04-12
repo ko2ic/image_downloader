@@ -28,6 +28,7 @@ import java.util.*
 
 class ImageDownloaderPlugin(
     private val registrar: PluginRegistry.Registrar,
+    private val channel: MethodChannel,
     private val permissionListener: ImageDownloderPermissionListener
 ) : MethodCallHandler {
     companion object {
@@ -38,7 +39,8 @@ class ImageDownloaderPlugin(
             val listener = ImageDownloderPermissionListener(registrar.activity())
             registrar.addRequestPermissionsResultListener(listener)
 
-            channel.setMethodCallHandler(ImageDownloaderPlugin(registrar, listener))
+            channel.setMethodCallHandler(ImageDownloaderPlugin(registrar, channel, listener))
+
         }
 
         private const val LOGGER_TAG = "image_downloader"
@@ -51,7 +53,7 @@ class ImageDownloaderPlugin(
             "downloadImage" -> {
                 inPublicDir = call.argument<Boolean>("inPublicDir") ?: true
 
-                val permissionCallback = CallbackImpl(call, result, registrar.context())
+                val permissionCallback = CallbackImpl(call, result, channel, registrar.context())
 
                 if (inPublicDir) {
                     this.permissionListener.callback = permissionCallback
@@ -152,7 +154,12 @@ class ImageDownloaderPlugin(
         }
     }
 
-    class CallbackImpl(private val call: MethodCall, private val result: Result, private val context: Context) :
+    class CallbackImpl(
+        private val call: MethodCall,
+        private val result: Result,
+        private val channel: MethodChannel,
+        private val context: Context
+    ) :
         ImageDownloderPermissionListener.Callback {
 
         override fun granted() {
@@ -188,6 +195,13 @@ class ImageDownloaderPlugin(
                 when (it) {
                     is Downloader.DownloadStatus.Failed -> Log.d(LOGGER_TAG, it.reason)
                     is Downloader.DownloadStatus.Paused -> Log.d(LOGGER_TAG, it.reason)
+                    is Downloader.DownloadStatus.Running -> {
+                        Log.d(LOGGER_TAG, it.progress.toString())
+                        val args = HashMap<String, Any>()
+                        args["image_id"] = it.result.id.toString()
+                        args["progress"] = it.progress
+                        channel.invokeMethod("onProgressUpdate", args)
+                    }
                 }
 
             }, onError = {
