@@ -1,3 +1,8 @@
+## 0.13.4
+
+* Fix crash when MimeType cannot be determined.   
+(It could not be retrieved from the file name due to a simple mistake)
+
 ## 0.13.3
 
 * Fix crash when MimeType cannot be determined.
