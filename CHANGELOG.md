@@ -1,3 +1,8 @@
+## 0.14.1
+
+* Fix bug when downloading multiple files.
+* Add samples of multiple files.
+
 ## 0.14.0
 
 * Add feature to get progress value.

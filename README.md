@@ -106,6 +106,35 @@ Note: On iOS, ```onProgressUpdate``` cannot get imageId.
   }
 ```
 
+## Downloading multiple files
+
+You can do it simply by using ```await``` .
+
+```dart
+var list = [
+  "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/bigsize.jpg",
+  "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter.jpg",
+  "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter_transparent.png",
+  "https://raw.githubusercontent.com/wiki/ko2ic/flutter_google_ad_manager/images/sample.gif",
+  "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter_no.png",
+  "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter.png",
+];
+
+List<File> files = [];
+
+for (var url in list) {
+  try {
+    var imageId = await ImageDownloader.downloadImage(url);
+    var path = await ImageDownloader.findPath(imageId);
+    files.add(File(path));
+  } catch (error) {
+    print(error);
+  }
+}
+setState(() {
+  _mulitpleFiles.addAll(files);
+});
+```
 
 ## Trouble Shooting
 

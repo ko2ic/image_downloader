@@ -64,6 +64,10 @@ class Downloader(private val context: Context, private val request: DownloadMana
                         DownloadManager.STATUS_FAILED -> downloading = false
                     }
 
+                    if (totalBytes == 0) {
+                        break
+                    }
+
                     val progress = ((downloadedBytes * 100) / totalBytes)
 
                     onNext(DownloadStatus.Running(createRequestResult(downloadId, cursor), progress))
