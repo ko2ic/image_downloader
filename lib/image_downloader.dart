@@ -45,6 +45,10 @@ class ImageDownloader {
     });
   }
 
+  static Future<void> open(String localPath) async {
+    return await _channel.invokeMethod('open', <String, String>{'path': localPath});
+  }
+
   /// Acquire the saved image name.
   static Future<String> findName(String imageId) async {
     return await _channel.invokeMethod('findName', <String, String>{'imageId': imageId}).then<String>((dynamic result) => result);

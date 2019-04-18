@@ -1,10 +1,7 @@
 # image_downloader
 
-Flutter plugin that downloads images on the Internet and saves them on device.     
+Flutter plugin that downloads images and movies on the Internet and saves to Photo Library on iOS or specified directory on Android.     
 This will keep Exif(DateTimeOriginal) and GPS(Latitude, Longitude).
-
-For Android, image is saved in ```Environment.DIRECTORY_DOWNLOADS```.   
-For ios, image is saved in Photo Library.
 
 ## Getting Started
 
@@ -134,6 +131,85 @@ for (var url in list) {
 setState(() {
   _mulitpleFiles.addAll(files);
 });
+```
+
+## Preview
+
+There is a ```open``` method to be able to immediately preview the download file.   
+If you call it, in the case of ios, a preview screen using UIDocumentInteractionController is displayed. In case of Android, it is displayed by Intent.    
+
+```dart
+var imageId = await ImageDownloader.downloadImage(url);
+var path = await ImageDownloader.findPath(imageId);
+await ImageDownloader.open(path);
+```
+
+Note: in the case of android, to use this feature, the following settings are required.
+
+Add the following within <application> tag in ```AndroidManifest.xml``` .
+
+```
+        <provider
+                android:name="com.ko2ic.imagedownloader.FileProvider"
+                android:authorities="${applicationId}.image_downloader.provider"
+                android:exported="false"
+                android:grantUriPermissions="true">
+            <meta-data
+                    android:name="android.support.FILE_PROVIDER_PATHS"
+                    android:resource="@xml/provider_paths"/>
+        </provider>
+```
+
+Add ```provider_paths.xml```  in ```android/app/src/main/res/xml/``` .
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <external-path name="external_files" path="."/>
+</paths>
+```
+
+## Error
+
+### downloadImage
+
+```PlatformException#code``` can determine the type of error.   
+
+In the case of HTTP status error, the code is stored.   
+In the case of the file format is not supported, ```unsupported_file``` is stored.   
+There is an important point in the case of ```unsupported_file```.   
+__Even unsupported files are stored in a temporary directory.__   
+It can be retrieved with ```error.details ["unsupported_file_path"];``` .   
+Note: it will be deleted when you exit the app.
+
+
+```dart
+ImageDownloader.downloadImage(url).catchError((error) {
+  if (error is PlatformException) {
+    var path = "";
+    if (error.code == "404") {
+      print("Not Found Error.");
+    } else if (error.code == "unsupported_file") {
+      print("UnSupported FIle Error.");
+      path = error.details["unsupported_file_path"];
+    }
+  }
+})
+
+```
+
+### open
+
+If the file can not be previewed, the ```preview_error``` is stored in the code.
+
+```dart
+onPressed: () async {
+  await ImageDownloader.open(_path).catchError((error) {
+    Scaffold.of(context).showSnackBar(SnackBar(
+      content: Text((error as PlatformException).message),
+    ));
+  });
+},
 ```
 
 ## Trouble Shooting

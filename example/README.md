@@ -52,15 +52,30 @@ class _MyAppState extends State<MyApp> {
                 Text(_size),
                 Text(_mimeType),
                 Text(_path),
+                _path == ""
+                    ? Container()
+                    : Builder(
+                        builder: (context) => RaisedButton(
+                              onPressed: () async {
+                                await ImageDownloader.open(_path).catchError((error) {
+                                  Scaffold.of(context).showSnackBar(SnackBar(
+                                    content: Text((error as PlatformException).message),
+                                  ));
+                                });
+                              },
+                              child: Text("Open"),
+                            ),
+                      ),
                 RaisedButton(
                   onPressed: () {
-                    _downloadImage();
+                    _downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/bigsize.jpg");
                   },
                   child: Text("default destination"),
                 ),
                 RaisedButton(
                   onPressed: () {
                     _downloadImage(
+                      "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter.png",
                       destination: AndroidDestinationType.directoryPictures
                         ..inExternalFilesDir()
                         ..subDirectory("sample.gif"),
@@ -70,9 +85,24 @@ class _MyAppState extends State<MyApp> {
                 ),
                 RaisedButton(
                   onPressed: () {
-                    _downloadImage(whenError: true);
+                    _downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter_no.png", whenError: true);
                   },
                   child: Text("404 error"),
+                ),
+                RaisedButton(
+                  onPressed: () {
+                    _downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/sample.mkv", whenError: true);
+                    //_downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/sample.3gp");
+                  },
+                  child: Text("unsupported file error(only ios)"),
+                ),
+                RaisedButton(
+                  onPressed: () {
+                    //_downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/sample.mp4");
+                    //_downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/sample.m4v");
+                    _downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/sample.mov");
+                  },
+                  child: Text("movie"),
                 ),
                 RaisedButton(
                   onPressed: () async {
@@ -131,7 +161,7 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  Future<void> _downloadImage({AndroidDestinationType destination, bool whenError = false}) async {
+  Future<void> _downloadImage(String url, {AndroidDestinationType destination, bool whenError = false}) async {
     String fileName;
     String path;
     int size;
@@ -140,23 +170,31 @@ class _MyAppState extends State<MyApp> {
       String imageId;
 
       if (whenError) {
-        imageId = await ImageDownloader.downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter_no.png").catchError((error) {
-          if (error is PlatformException && error.code == "404") {
-            print("Not Found Error.");
+        imageId = await ImageDownloader.downloadImage(url).catchError((error) {
+          if (error is PlatformException) {
+            var path = "";
+            if (error.code == "404") {
+              print("Not Found Error.");
+            } else if (error.code == "unsupported_file") {
+              print("UnSupported FIle Error.");
+              path = error.details["unsupported_file_path"];
+            }
+            setState(() {
+              _message = error.toString();
+              _path = path;
+            });
           }
-          setState(() {
-            _message = error.toString();
-          });
+
           print(error);
         }).timeout(Duration(seconds: 10), onTimeout: () {
           print("timeout");
         });
       } else {
         if (destination == null) {
-          imageId = await ImageDownloader.downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/bigsize.jpg");
+          imageId = await ImageDownloader.downloadImage(url);
         } else {
           imageId = await ImageDownloader.downloadImage(
-            "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter.png",
+            url,
             destination: destination,
           );
         }
@@ -183,10 +221,13 @@ class _MyAppState extends State<MyApp> {
       _message = 'Saved as "$fileName" in $location.\n';
       _size = 'size:     $size';
       _mimeType = 'mimeType: $mimeType';
-      _path = 'path:$path';
+      _path = path;
 
-      _imageFile = File(path);
+      if (!_mimeType.contains("video")) {
+        _imageFile = File(path);
+      }
     });
   }
 }
+
 ```

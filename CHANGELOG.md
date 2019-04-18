@@ -1,3 +1,8 @@
+## 0.15.0
+
+* Support downloading video.
+* Added the feature to be able to immediately preview the download file.
+
 ## 0.14.1
 
 * Fix bug when downloading multiple files.

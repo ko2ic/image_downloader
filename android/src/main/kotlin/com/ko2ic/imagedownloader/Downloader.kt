@@ -9,7 +9,7 @@ import android.content.IntentFilter
 import android.database.Cursor
 
 
-class Downloader(private val context: Context, private val request: DownloadManager.Request) {
+class Downloader(private val context: Context, private val request: Request) {
 
     private val manager: DownloadManager =
         context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
@@ -26,13 +26,13 @@ class Downloader(private val context: Context, private val request: DownloadMana
         receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 intent ?: return
-                if (DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(intent.action)) {
-                    val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
+                if (ACTION_DOWNLOAD_COMPLETE.equals(intent.action)) {
+                    val id = intent.getLongExtra(EXTRA_DOWNLOAD_ID, -1)
                     resolveDownloadStatus(id, onNext, onError, onComplete)
                 }
             }
         }
-        context.registerReceiver(receiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
+        context.registerReceiver(receiver, IntentFilter(ACTION_DOWNLOAD_COMPLETE))
         downloadId = manager.enqueue(request)
 
         val downloadId = this.downloadId
@@ -43,7 +43,7 @@ class Downloader(private val context: Context, private val request: DownloadMana
 
                 while (downloading) {
 
-                    val q = DownloadManager.Query()
+                    val q = Query()
                     q.setFilterById(downloadId)
 
                     val cursor = manager.query(q)
@@ -55,13 +55,13 @@ class Downloader(private val context: Context, private val request: DownloadMana
                     }
 
                     val downloadedBytes = cursor.getInt(
-                        cursor.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
+                        cursor.getColumnIndex(COLUMN_BYTES_DOWNLOADED_SO_FAR)
                     )
-                    val totalBytes = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
+                    val totalBytes = cursor.getInt(cursor.getColumnIndex(COLUMN_TOTAL_SIZE_BYTES))
 
-                    when (cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS))) {
-                        DownloadManager.STATUS_SUCCESSFUL -> downloading = false
-                        DownloadManager.STATUS_FAILED -> downloading = false
+                    when (cursor.getInt(cursor.getColumnIndex(COLUMN_STATUS))) {
+                        STATUS_SUCCESSFUL -> downloading = false
+                        STATUS_FAILED -> downloading = false
                     }
 
                     if (totalBytes == 0) {
@@ -73,7 +73,7 @@ class Downloader(private val context: Context, private val request: DownloadMana
                     onNext(DownloadStatus.Running(createRequestResult(downloadId, cursor), progress))
 
                     cursor.close()
-                    Thread.sleep(500)
+                    Thread.sleep(200)
                 }
             }).start()
         }
@@ -96,16 +96,16 @@ class Downloader(private val context: Context, private val request: DownloadMana
         onError: (DownloadFailedException) -> Unit,
         onComplete: () -> Unit
     ) {
-        val query = DownloadManager.Query().apply {
+        val query = Query().apply {
             setFilterById(id)
         }
         val cursor = manager.query(query)
         if (cursor.moveToFirst()) {
-            val status = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS))
-            val reason = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_REASON))
+            val status = cursor.getInt(cursor.getColumnIndex(COLUMN_STATUS))
+            val reason = cursor.getInt(cursor.getColumnIndex(COLUMN_REASON))
             val requestResult: RequestResult = createRequestResult(id, cursor)
             when (status) {
-                DownloadManager.STATUS_FAILED -> {
+                STATUS_FAILED -> {
                     val failedReason = when (reason) {
                         ERROR_CANNOT_RESUME -> Pair(
                             "ERROR_CANNOT_RESUME",
@@ -147,7 +147,7 @@ class Downloader(private val context: Context, private val request: DownloadMana
                     cancel()
                     onError(DownloadFailedException(failedReason.first, failedReason.second))
                 }
-                DownloadManager.STATUS_PAUSED -> {
+                STATUS_PAUSED -> {
                     val pausedReason = when (reason) {
                         PAUSED_QUEUED_FOR_WIFI -> "PAUSED_QUEUED_FOR_WIFI"
                         PAUSED_UNKNOWN -> "PAUSED_UNKNOWN"
@@ -157,10 +157,10 @@ class Downloader(private val context: Context, private val request: DownloadMana
                     }
                     onNext(DownloadStatus.Paused(requestResult, pausedReason))
                 }
-                DownloadManager.STATUS_PENDING -> {
+                STATUS_PENDING -> {
                     onNext(DownloadStatus.Pending(requestResult))
                 }
-                DownloadManager.STATUS_SUCCESSFUL -> {
+                STATUS_SUCCESSFUL -> {
                     onNext(DownloadStatus.Successful(requestResult))
                     onComplete()
                     receiver?.let {

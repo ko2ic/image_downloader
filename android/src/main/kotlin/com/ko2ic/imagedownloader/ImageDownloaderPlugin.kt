@@ -3,13 +3,16 @@ package com.ko2ic.imagedownloader
 import android.app.DownloadManager
 import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.webkit.MimeTypeMap
+import androidx.core.content.FileProvider
 import com.ko2ic.imagedownloader.ImageDownloaderPlugin.TemporaryDatabase.Companion.COLUMNS
 import com.ko2ic.imagedownloader.ImageDownloaderPlugin.TemporaryDatabase.Companion.TABLE_NAME
 import io.flutter.plugin.common.MethodCall
@@ -64,6 +67,10 @@ class ImageDownloaderPlugin(
                     permissionCallback.granted()
                 }
             }
+            "open" -> {
+                open(call, result)
+            }
+
             "findPath" -> {
                 val imageId = call.argument<String>("imageId")
                     ?: throw IllegalArgumentException("imageId is required.")
@@ -90,6 +97,37 @@ class ImageDownloaderPlugin(
             }
             else -> result.notImplemented()
         }
+    }
+
+    private fun open(call: MethodCall, result: Result) {
+
+        val path = call.argument<String>("path")
+            ?: throw IllegalArgumentException("path is required.")
+
+        val file = File(path)
+        val intent = Intent(Intent.ACTION_VIEW)
+
+        val fileExtension = MimeTypeMap.getFileExtensionFromUrl(file.path)
+        val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension)
+
+        val context = registrar.context()
+        if (Build.VERSION.SDK_INT >= 24) {
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.image_downloader.provider", file)
+            intent.setDataAndType(uri, mimeType)
+        } else {
+            intent.setDataAndType(Uri.fromFile(file), mimeType)
+        }
+
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+
+        val manager = context.packageManager
+        if (manager.queryIntentActivities(intent, 0).size == 0) {
+            result.error("preview_error", "This file is not supported for previewing", null)
+        } else {
+            context.startActivity(intent)
+        }
+
     }
 
     private fun findPath(imageId: String, context: Context): String {
