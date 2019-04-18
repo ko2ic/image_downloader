@@ -42,6 +42,9 @@ public class SwiftImageDownloaderPlugin: NSObject, FlutterPlugin {
                     result(nil)
                 }
             }
+        case "open":
+            open(call, result: result)
+            break
         case "findPath":
             setData(call, result: result) { imageId in
                 findPath(imageId: imageId) { value in
@@ -172,7 +175,16 @@ public class SwiftImageDownloaderPlugin: NSObject, FlutterPlugin {
             if let imageId = imageId, isSuccess {
                 result(imageId)
             } else {
-                result(FlutterError(code: "save_error", message: "Couldn't save to photo library.", details: error))
+                if (error! as NSError).domain == "NSCocoaErrorDomain", (error! as NSError).code == -1 {
+                    guard let imageUrl = self.createTemporaryFile(fileName: nil, ext: "jpg") else {
+                        return
+                    }
+                    let detail = ["unsupported_file_path": imageUrl.path]
+                    result(FlutterError(code: "unsupported_file", message: "Couldn't save to photo library.", details: detail))
+                    return
+                } else {
+                    result(FlutterError(code: "save_error", message: "Couldn't save to photo library.", details: error))
+                }
             }
         }
     }
@@ -182,14 +194,7 @@ public class SwiftImageDownloaderPlugin: NSObject, FlutterPlugin {
             _ = UIImageView(image: UIImage(data: data))
         }
 
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd.HH.mm.sss"
-        let now = Date()
-
-        let fileName = (name != nil) ? name! : "\(formatter.string(from: now)).gif"
-        guard let imageUrl = NSURL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true).appendingPathComponent(fileName) else {
-            result(FlutterError(code: "save_error", message: "Couldn't save gif in temporary directory.", details: nil))
+        guard let imageUrl = createTemporaryFile(fileName: name, ext: "gif") else {
             return
         }
         do {
@@ -210,11 +215,79 @@ public class SwiftImageDownloaderPlugin: NSObject, FlutterPlugin {
         }
     }
 
+    private func saveVideo(data: Data, name: String?, result: @escaping FlutterResult) {
+        guard let videoUrl = createTemporaryFile(fileName: name, ext: "mp4") else {
+            return
+        }
+
+        do {
+            var imageId: String?
+            try data.write(to: videoUrl)
+            PHPhotoLibrary.shared().performChanges({
+                let request = PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: videoUrl)
+                imageId = request?.placeholderForCreatedAsset?.localIdentifier
+            }, completionHandler: { isSuccess, error in
+                if let imageId = imageId, isSuccess {
+                    result(imageId)
+                } else {
+                    if (error! as NSError).domain == "NSCocoaErrorDomain", (error! as NSError).code == -1 {
+                        let detail = ["unsupported_file_path": videoUrl.path]
+                        result(FlutterError(code: "unsupported_file", message: "Couldn't save to photo library.", details: detail))
+                        return
+                    } else {
+                        result(FlutterError(code: "save_error", message: "Couldn't save to photo library.", details: error))
+                    }
+                }
+            })
+        } catch {
+            result(FlutterError(code: "save_error", message: "Couldn't save gif to photo library.", details: error))
+        }
+    }
+
+    private func createTemporaryFile(fileName: String?, ext: String) -> URL? {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd.HH.mm.sss"
+        let now = Date()
+
+        let fileName = (fileName != nil) ? fileName! : "\(formatter.string(from: now)).\(ext)"
+        guard let temporaryFile = NSURL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true).appendingPathComponent(fileName) else {
+            var ext = ext
+            if let lastFileName = fileName.split(separator: ".").last {
+                ext = String(lastFileName)
+            }
+            result(FlutterError(code: "save_error", message: "Couldn't save \(ext) in temporary directory.", details: nil))
+            return nil
+        }
+        return temporaryFile
+    }
+
+    private func open(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        guard let path = (call.arguments as? Dictionary<String, String>)?["path"] else {
+            result(FlutterError(code: "assertion_error", message: "path is required.", details: nil))
+            return
+        }
+
+        let controller = UIDocumentInteractionController(url: URL(fileURLWithPath: path))
+        controller.delegate = self
+        if !controller.presentPreview(animated: true) {
+            result(FlutterError(code: "preview_error", message: "This file is not supported for previewing", details: nil))
+        }
+    }
+
     private func findPath(imageId: String, completion: @escaping (String) -> Void) {
         let asset = PHAsset.fetchAssets(withLocalIdentifiers: [imageId], options: nil).firstObject!
-        asset.requestContentEditingInput(with: PHContentEditingInputRequestOptions()) { input, _ in
-            let url = input?.fullSizeImageURL
-            completion(url!.path)
+
+        if asset.mediaType == PHAssetMediaType.video {
+            PHImageManager().requestAVAsset(forVideo: asset, options: nil, resultHandler: { avurlAsset, _, _ in
+                let asset = avurlAsset as! AVURLAsset
+                completion(asset.url.path)
+            })
+        } else {
+            asset.requestContentEditingInput(with: PHContentEditingInputRequestOptions()) { input, _ in
+                let url = input?.fullSizeImageURL
+                completion(url!.path)
+            }
         }
     }
 
@@ -231,9 +304,28 @@ public class SwiftImageDownloaderPlugin: NSObject, FlutterPlugin {
 
     private func findMimeType(imageId: String, completion: @escaping (String) -> Void) {
         let asset = PHAsset.fetchAssets(withLocalIdentifiers: [imageId], options: nil).firstObject!
-        PHImageManager.default().requestImageData(for: asset, options: nil) { _, uti, _, _ in
-            let mimeType: String = UTTypeCopyPreferredTagWithClass(uti! as CFString, kUTTagClassMIMEType)!.takeRetainedValue() as String
-            completion(mimeType)
+
+        if asset.mediaType == PHAssetMediaType.video {
+            PHImageManager().requestAVAsset(forVideo: asset, options: nil, resultHandler: { avurlAsset, _, _ in
+                let asset = avurlAsset as! AVURLAsset
+                let pathExtension = asset.url.pathExtension
+                if let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, pathExtension as NSString, nil)?.takeRetainedValue() {
+                    if let mimetype = UTTypeCopyPreferredTagWithClass(uti, kUTTagClassMIMEType)?.takeRetainedValue() {
+                        completion(mimetype as String)
+                    }
+                } else {
+                    completion("")
+                }
+            })
+        } else {
+            PHImageManager.default().requestImageData(for: asset, options: nil) { _, uti, _, _ in
+                if let uti = uti {
+                    let mimeType: String = UTTypeCopyPreferredTagWithClass(uti as CFString, kUTTagClassMIMEType)!.takeRetainedValue() as String
+                    completion(mimeType)
+                } else {
+                    completion("")
+                }
+            }
         }
     }
 }
@@ -262,14 +354,24 @@ extension SwiftImageDownloaderPlugin: URLSessionDelegate {
             result = nil
             return
         }
-        if let statusCode = (downloadTask.response as? HTTPURLResponse)?.statusCode {
+        let httpResponse = (downloadTask.response as? HTTPURLResponse)
+        if let statusCode = httpResponse?.statusCode {
             if 400 ... 599 ~= statusCode {
                 result(FlutterError(code: "\(statusCode)", message: "HTTP status code error.", details: nil))
                 result = nil
                 return
             }
         }
+
         let data = fileData as Data
+
+        let contentType = httpResponse?.allHeaderFields["Content-Type"] as? String
+        if let contentType = contentType {
+            if contentType.contains("vide") || contentType == "application/octet-stream" {
+                saveVideo(data: data, name: httpResponse?.suggestedFilename, result: result)
+                return
+            }
+        }
 
         var values: UInt8 = 0
         data.copyBytes(to: &values, count: 1)
@@ -290,5 +392,11 @@ extension SwiftImageDownloaderPlugin: URLSessionDelegate {
             saveImage(data, result: result)
         }
         result = nil
+    }
+}
+
+extension SwiftImageDownloaderPlugin: UIDocumentInteractionControllerDelegate {
+    public func documentInteractionControllerViewControllerForPreview(_: UIDocumentInteractionController) -> UIViewController {
+        return (UIApplication.shared.delegate?.window??.rootViewController)!
     }
 }
