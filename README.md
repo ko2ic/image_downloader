@@ -173,7 +173,7 @@ Add ```provider_paths.xml```  in ```android/app/src/main/res/xml/``` .
 
 ### downloadImage
 
-```PlatformException#code``` can determine the type of error.   
+You can determine the type of error with ```PlatformException#code```.   
 
 In the case of HTTP status error, the code is stored.   
 In the case of the file format is not supported, ```unsupported_file``` is stored.   
@@ -203,13 +203,13 @@ ImageDownloader.downloadImage(url).catchError((error) {
 If the file can not be previewed, the ```preview_error``` is stored in the code.
 
 ```dart
-onPressed: () async {
   await ImageDownloader.open(_path).catchError((error) {
-    Scaffold.of(context).showSnackBar(SnackBar(
-      content: Text((error as PlatformException).message),
-    ));
+    if (error is PlatformException) {
+      if (error.code == "preview_error") {
+        print(error.message);
+      }
+    }    
   });
-},
 ```
 
 ## Trouble Shooting
