@@ -340,7 +340,7 @@ extension SwiftImageDownloaderPlugin: URLSessionDataDelegate {
 
     public func urlSession(_: URLSession, dataTask _: URLSessionDataTask, didReceive data: Data) {
         fileData.append(data)
-        let percentageDownloaded = Float(fileData.count) / Float(expectedContentLength)
+        let percentageDownloaded = Float(fileData.length) / Float(expectedContentLength)
         progress = percentageDownloaded
 
         channel.invokeMethod("onProgressUpdate", arguments: ["progress": Int(progress * 100)])

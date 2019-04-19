@@ -1,3 +1,7 @@
+## 0.15.1
+
+* Fix ```NSMutableData.count``` to ```NSMutableData.length``` .
+
 ## 0.15.0+1
 
 * Update README.md
