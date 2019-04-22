@@ -170,9 +170,9 @@ Add ```provider_paths.xml```  in ```android/app/src/main/res/xml/``` .
 </paths>
 ```
 
-## Error
+## Error Hnadling
 
-### downloadImage
+### downloadImage()
 
 You can determine the type of error with ```PlatformException#code```.   
 
@@ -199,7 +199,7 @@ ImageDownloader.downloadImage(url).catchError((error) {
 
 ```
 
-### open
+### open()
 
 If the file can not be previewed, the ```preview_error``` is stored in the code.
 
