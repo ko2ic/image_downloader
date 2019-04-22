@@ -146,7 +146,7 @@ await ImageDownloader.open(path);
 
 Note: in the case of android, to use this feature, the following settings are required.
 
-Add the following within <application> tag in ```AndroidManifest.xml``` .
+Add the following within \<application\> tag in ```AndroidManifest.xml``` .
 
 ```
         <provider
