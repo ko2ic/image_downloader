@@ -19,7 +19,6 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
-import io.flutter.plugin.common.PluginRegistry
 import io.flutter.plugin.common.PluginRegistry.Registrar
 import java.io.BufferedInputStream
 import java.io.File
@@ -30,7 +29,7 @@ import java.util.*
 
 
 class ImageDownloaderPlugin(
-    private val registrar: PluginRegistry.Registrar,
+    private val registrar: Registrar,
     private val channel: MethodChannel,
     private val permissionListener: ImageDownloderPermissionListener
 ) : MethodCallHandler {
@@ -287,6 +286,7 @@ class ImageDownloaderPlugin(
                 "DIRECTORY_DOWNLOADS" -> Environment.DIRECTORY_DOWNLOADS
                 "DIRECTORY_PICTURES" -> Environment.DIRECTORY_PICTURES
                 "DIRECTORY_DCIM" -> Environment.DIRECTORY_DCIM
+                "DIRECTORY_MOVIES" -> Environment.DIRECTORY_MOVIES
                 else -> directoryType
             }
         }
@@ -326,7 +326,7 @@ class ImageDownloaderPlugin(
                     .map { allowedChars.random() }
                     .joinToString("")
                 contentValues.put(MediaStore.Images.Media._ID, id)
-                db.writableDatabase.insert(TemporaryDatabase.TABLE_NAME, null, contentValues)
+                db.writableDatabase.insert(TABLE_NAME, null, contentValues)
                 return id
             }
         }

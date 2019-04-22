@@ -22,7 +22,8 @@ class ImageDownloader {
   /// Otherwise it is a PlatformException.
   ///
   /// imageId is in case of Adroid,  MediaStore.Images.Media._ID, in case of ios, PHObjectPlaceholder#localIdentifier.
-  static Future<String> downloadImage(String url, {
+  static Future<String> downloadImage(
+    String url, {
     AndroidDestinationType destination,
   }) async {
     return await _channel.invokeMethod('downloadImage', <String, dynamic>{
@@ -84,10 +85,10 @@ class AndroidDestinationType {
   /// For example, ```/storage/emulated/0/Android/data/<applicationId>/files``` .
   /// [subDirectory] can contain a file name.
   factory AndroidDestinationType.custom({
-                                          bool inPublicDir,
-                                          @required String directory,
-                                          String subDirectory,
-                                        }) {
+    bool inPublicDir,
+    @required String directory,
+    String subDirectory,
+  }) {
     return AndroidDestinationType._internal(directory)
       .._setInPublicDir(inPublicDir)
       ..subDirectory(subDirectory);
@@ -117,4 +118,7 @@ class AndroidDestinationType {
 
   /// Environment.DIRECTORY_DCIM
   static final directoryDCIM = AndroidDestinationType._internal("DIRECTORY_DCIM");
+
+  /// Environment.DIRECTORY_MOVIES
+  static final directoryMovies = AndroidDestinationType._internal("DIRECTORY_MOVIES");
 }

@@ -1,3 +1,7 @@
+## 0.15.2
+
+* Add saving in Environment.DIRECTORY_MOVIES
+
 ## 0.15.1
 
 * Fix ```NSMutableData.count``` to ```NSMutableData.length``` .

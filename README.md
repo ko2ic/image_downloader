@@ -58,6 +58,7 @@ Three directories by default are provided.
 * AndroidDestinationType.directoryDownloads -> Environment.DIRECTORY_DOWNLOADS on Android
 * AndroidDestinationType.directoryPictures -> Environment.DIRECTORY_PICTURES on Android
 * AndroidDestinationType.directoryDCIM -> Environment.DIRECTORY_DCIM on Android
+* AndroidDestinationType.directoryMovies -> Environment.DIRECTORY_MOVIES on Android
 
 In addition, there is also custom. 
 
