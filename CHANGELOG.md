@@ -1,3 +1,7 @@
+## 0.15.4
+
+* Fixed an issue where progress was not displayed correctly
+
 ## 0.15.3
 
 * Fix crash with progress function
