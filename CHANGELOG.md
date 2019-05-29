@@ -1,3 +1,7 @@
+## 0.15.3
+
+* Fix crash with progress function
+
 ## 0.15.2
 
 * Add saving in Environment.DIRECTORY_MOVIES
