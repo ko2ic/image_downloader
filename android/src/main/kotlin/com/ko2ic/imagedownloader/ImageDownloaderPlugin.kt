@@ -9,6 +9,8 @@ import android.database.sqlite.SQLiteOpenHelper
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
 import android.webkit.MimeTypeMap
@@ -237,7 +239,12 @@ class ImageDownloaderPlugin(
                         val args = HashMap<String, Any>()
                         args["image_id"] = it.result.id.toString()
                         args["progress"] = it.progress
-                        channel.invokeMethod("onProgressUpdate", args)
+
+                        val uiThreadHandler = Handler(Looper.getMainLooper())
+
+                        uiThreadHandler.post {
+                            channel.invokeMethod("onProgressUpdate", args)
+                        }
                     }
                 }
 
