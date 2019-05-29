@@ -7,6 +7,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.database.Cursor
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 
 class Downloader(private val context: Context, private val request: Request) {
@@ -68,9 +70,13 @@ class Downloader(private val context: Context, private val request: Request) {
                         break
                     }
 
-                    val progress = ((downloadedBytes * 100) / totalBytes)
+                    val progress = BigDecimal(downloadedBytes).divide(
+                        BigDecimal(totalBytes), 2, RoundingMode.DOWN
+                    ).multiply(
+                        BigDecimal(100)
+                    ).setScale(0, RoundingMode.DOWN)
 
-                    onNext(DownloadStatus.Running(createRequestResult(downloadId, cursor), progress))
+                    onNext(DownloadStatus.Running(createRequestResult(downloadId, cursor), progress.toInt()))
 
                     cursor.close()
                     Thread.sleep(200)
