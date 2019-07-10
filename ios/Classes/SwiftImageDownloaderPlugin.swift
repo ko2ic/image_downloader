@@ -189,12 +189,12 @@ public class SwiftImageDownloaderPlugin: NSObject, FlutterPlugin {
         }
     }
 
-    private func saveGif(data: Data, name: String?, result: @escaping FlutterResult) {
+    private func saveImage(data: Data, withExtension: String, name: String?, result: @escaping FlutterResult) {
         DispatchQueue.main.async {
             _ = UIImageView(image: UIImage(data: data))
         }
 
-        guard let imageUrl = createTemporaryFile(fileName: name, ext: "gif") else {
+        guard let imageUrl = createTemporaryFile(fileName: name, ext: withExtension) else {
             return
         }
         do {
@@ -384,10 +384,24 @@ extension SwiftImageDownloaderPlugin: URLSessionDelegate {
             saveImage(data, result: result)
         case 0x47:
             // image/gif
-            saveGif(data: data, name: (downloadTask.response as? HTTPURLResponse)?.suggestedFilename, result: result)
+            saveImage(data: data, withExtension: "gif", name: (downloadTask.response as? HTTPURLResponse)?.suggestedFilename, result: result)
         case 0x49, 0x4D:
             // image/tiff
             saveImage(data, result: result)
+        case 0x00:
+            if (data.count >= 12) {
+                //....ftypheic ....ftypheix ....ftyphevc ....ftyphevx
+                let testString =  String(data: data.subdata(in: 4..<12), encoding: .nonLossyASCII)
+                if (testString == "ftypheic"
+                    || testString == "ftypheix"
+                    || testString == "ftyphevc"
+                    || testString == "ftyphevx") {
+                    // image/heic
+                    saveImage(data: data, withExtension: "heic", name: (downloadTask.response as? HTTPURLResponse)?.suggestedFilename, result: result)
+                }
+            } else {
+                saveImage(data, result: result)
+            }
         default:
             saveImage(data, result: result)
         }
