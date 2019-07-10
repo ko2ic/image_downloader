@@ -189,12 +189,12 @@ public class SwiftImageDownloaderPlugin: NSObject, FlutterPlugin {
         }
     }
 
-    private func saveImage(data: Data, withExtension: String, name: String?, result: @escaping FlutterResult) {
+    private func saveGif(data: Data, name: String?, result: @escaping FlutterResult) {
         DispatchQueue.main.async {
             _ = UIImageView(image: UIImage(data: data))
         }
 
-        guard let imageUrl = createTemporaryFile(fileName: name, ext: withExtension) else {
+        guard let imageUrl = createTemporaryFile(fileName: name, ext: "gif") else {
             return
         }
         do {
@@ -365,14 +365,6 @@ extension SwiftImageDownloaderPlugin: URLSessionDelegate {
 
         let data = fileData as Data
 
-        let contentType = httpResponse?.allHeaderFields["Content-Type"] as? String
-        if let contentType = contentType {
-            if contentType.contains("vide") || contentType == "application/octet-stream" {
-                saveVideo(data: data, name: httpResponse?.suggestedFilename, result: result)
-                return
-            }
-        }
-
         var values: UInt8 = 0
         data.copyBytes(to: &values, count: 1)
         switch values {
@@ -384,24 +376,39 @@ extension SwiftImageDownloaderPlugin: URLSessionDelegate {
             saveImage(data, result: result)
         case 0x47:
             // image/gif
-            saveImage(data: data, withExtension: "gif", name: (downloadTask.response as? HTTPURLResponse)?.suggestedFilename, result: result)
+            saveGif(data: data, name: (downloadTask.response as? HTTPURLResponse)?.suggestedFilename, result: result)
         case 0x49, 0x4D:
             // image/tiff
             saveImage(data, result: result)
         case 0x00:
-            if (data.count >= 12) {
-                //....ftypheic ....ftypheix ....ftyphevc ....ftyphevx
-                let testString =  String(data: data.subdata(in: 4..<12), encoding: .nonLossyASCII)
-                if (testString == "ftypheic"
+            if data.count >= 12 {
+                let testString = String(data: data.subdata(in: 4 ..< 12), encoding: .nonLossyASCII)
+                // image/heic
+                if testString == "ftypheic"
                     || testString == "ftypheix"
                     || testString == "ftyphevc"
-                    || testString == "ftyphevx") {
-                    // image/heic
-                    saveImage(data: data, withExtension: "heic", name: (downloadTask.response as? HTTPURLResponse)?.suggestedFilename, result: result)
+                    || testString == "ftyphevx" {
+                    // saved as jpeg
+                    let uiImage = UIImage(data: data)!
+                    let metadata = MetaDataUtils.getMetaData(imageData: data)
+                    let orientation = metadata[String(kCGImagePropertyOrientation)] as? UInt32 ?? 0
+                    let newImage = UIImage(cgImage: uiImage.cgImage!, scale: 1.0, orientation: MetaDataUtils.getNormalizedUIImageOrientation(CGImagePropertyOrientation(rawValue: orientation)))
+                    let jpegData = newImage.jpegData(compressionQuality: 1.0)!
+                    let newData = MetaDataUtils.updateMesataData(metaData: metadata, imageData: jpegData)
+                    saveImage(newData, result: result)
+                    return
+                } else {
+                    // movie
+                    let contentType = httpResponse?.allHeaderFields["Content-Type"] as? String
+                    if let contentType = contentType {
+                        if contentType.contains("vide") || contentType == "application/octet-stream" {
+                            saveVideo(data: data, name: httpResponse?.suggestedFilename, result: result)
+                            return
+                        }
+                    }
                 }
-            } else {
-                saveImage(data, result: result)
             }
+            fallthrough
         default:
             saveImage(data, result: result)
         }

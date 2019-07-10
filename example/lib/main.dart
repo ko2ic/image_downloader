@@ -54,15 +54,15 @@ class _MyAppState extends State<MyApp> {
                     ? Container()
                     : Builder(
                         builder: (context) => RaisedButton(
-                              onPressed: () async {
-                                await ImageDownloader.open(_path).catchError((error) {
-                                  Scaffold.of(context).showSnackBar(SnackBar(
-                                    content: Text((error as PlatformException).message),
-                                  ));
-                                });
-                              },
-                              child: Text("Open"),
-                            ),
+                          onPressed: () async {
+                            await ImageDownloader.open(_path).catchError((error) {
+                              Scaffold.of(context).showSnackBar(SnackBar(
+                                content: Text((error as PlatformException).message),
+                              ));
+                            });
+                          },
+                          child: Text("Open"),
+                        ),
                       ),
                 RaisedButton(
                   onPressed: () {
@@ -107,6 +107,7 @@ class _MyAppState extends State<MyApp> {
                     var list = [
                       "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/bigsize.jpg",
                       "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter.jpg",
+                      "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/sample.HEIC",
                       "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter_transparent.png",
                       "https://raw.githubusercontent.com/wiki/ko2ic/flutter_google_ad_manager/images/sample.gif",
                       "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter_no.png",

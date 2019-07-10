@@ -1,3 +1,7 @@
+## 0.16.0
+
+* Supports downloading HEIC and saving as jpeg in case of iOS
+
 ## 0.15.4
 
 * Fixed an issue where progress was not displayed correctly
