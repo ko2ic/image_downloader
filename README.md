@@ -38,7 +38,7 @@ try {
   var size = await ImageDownloader.findByteSize(imageId);
   var mimeType = await ImageDownloader.findMimeType(imageId);
 } on PlatformException catch (error) {
-  print(error)
+  print(error);
 }
 ```
 
