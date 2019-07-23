@@ -1,3 +1,7 @@
+## 0.16.1
+
+* Fix to return an error if it could not be saved on Android.
+
 ## 0.16.0
 
 * Supports downloading HEIC and saving as jpeg in case of iOS

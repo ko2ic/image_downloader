@@ -259,7 +259,7 @@ class ImageDownloaderPlugin(
                 }
 
                 if (!file.exists()) {
-                    result.error("ERROR_FILE_ERROR", "File not found after completed", null)
+                    result.error("save_error", "Couldn't save ${file.absolutePath ?: tempSubDirectory} ", null)
                 } else {
                     val stream = BufferedInputStream(FileInputStream(file))
                     val mimeType = URLConnection.guessContentTypeFromStream(stream)
@@ -280,8 +280,8 @@ class ImageDownloaderPlugin(
 
                     file.renameTo(newFile)
                     val newMimeType = mimeType
-                            ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(newFile.extension)
-                            ?: ""
+                        ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(newFile.extension)
+                        ?: ""
                     val imageId = saveToDatabase(newFile, newMimeType, inPublicDir)
 
                     result.success(imageId)
