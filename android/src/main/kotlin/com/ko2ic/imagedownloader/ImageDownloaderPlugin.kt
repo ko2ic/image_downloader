@@ -258,29 +258,34 @@ class ImageDownloaderPlugin(
                     File("${context.getExternalFilesDir(directory)}/$tempSubDirectory")
                 }
 
-                val stream = BufferedInputStream(FileInputStream(file))
-                val mimeType = URLConnection.guessContentTypeFromStream(stream)
-
-                val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
-
-                val fileName = when {
-                    subDirectory != null -> subDirectory
-                    extension != null -> "$tempSubDirectory.$extension"
-                    else -> uri.lastPathSegment?.split("/")?.last() ?: "file"
-                }
-
-                val newFile = if (inPublicDir) {
-                    File("${Environment.getExternalStoragePublicDirectory(directory)}/$fileName")
+                if (!file.exists()) {
+                    result.error("ERROR_FILE_ERROR", "File not found after completed", null)
                 } else {
-                    File("${context.getExternalFilesDir(directory)}/$fileName")
+                    val stream = BufferedInputStream(FileInputStream(file))
+                    val mimeType = URLConnection.guessContentTypeFromStream(stream)
+
+                    val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
+
+                    val fileName = when {
+                        subDirectory != null -> subDirectory
+                        extension != null -> "$tempSubDirectory.$extension"
+                        else -> uri.lastPathSegment?.split("/")?.last() ?: "file"
+                    }
+
+                    val newFile = if (inPublicDir) {
+                        File("${Environment.getExternalStoragePublicDirectory(directory)}/$fileName")
+                    } else {
+                        File("${context.getExternalFilesDir(directory)}/$fileName")
+                    }
+
+                    file.renameTo(newFile)
+                    val newMimeType = mimeType
+                            ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(newFile.extension)
+                            ?: ""
+                    val imageId = saveToDatabase(newFile, newMimeType, inPublicDir)
+
+                    result.success(imageId)
                 }
-
-                file.renameTo(newFile)
-                val newMimeType = mimeType
-                    ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(newFile.extension) ?: ""
-                val imageId = saveToDatabase(newFile, newMimeType, inPublicDir)
-
-                result.success(imageId)
             })
         }
 
