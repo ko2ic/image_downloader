@@ -20,5 +20,6 @@ A new flutter plugin project.
    'OTHER_LDFLAGS' => '$(inherited) -undefined dynamic_lookup'
   }
   s.ios.deployment_target = '8.0'
+  s.swift_version = '4.2'
 end
 

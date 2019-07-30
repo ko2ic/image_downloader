@@ -1,3 +1,7 @@
+## 0.16.2
+
+* Fix swift_version to 4.2.
+
 ## 0.16.1
 
 * Fix to return an error if it could not be saved on Android.
