@@ -48,6 +48,11 @@ class ImageDownloader {
     });
   }
 
+  /// cancel a single Downloading.
+  static Future<void> cancel() async {
+    return await _channel.invokeMethod('cancel');
+  }
+
   static Future<void> open(String localPath) async {
     return await _channel.invokeMethod('open', <String, String>{'path': localPath});
   }

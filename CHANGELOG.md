@@ -1,3 +1,7 @@
+## 0.18.0
+
+* Supports to cancel downloading.(only single download)
+
 ## 0.17.0
 
 * Supports HTTP Request Header.

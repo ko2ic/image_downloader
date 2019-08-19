@@ -14,7 +14,6 @@ public class SwiftImageDownloaderPlugin: NSObject, FlutterPlugin {
     let channel: FlutterMethodChannel
     var result: FlutterResult!
     var fileData: NSMutableData = NSMutableData()
-    var session: URLSession?
     var dataTask: URLSessionDataTask?
     var expectedContentLength = 0
     var progress: Float = 0.0
@@ -44,6 +43,8 @@ public class SwiftImageDownloaderPlugin: NSObject, FlutterPlugin {
                     result(nil)
                 }
             }
+        case "cancel":
+            dataTask?.cancel()
         case "open":
             open(call, result: result)
             break
@@ -97,6 +98,7 @@ public class SwiftImageDownloaderPlugin: NSObject, FlutterPlugin {
         }
 
         let task = session.dataTask(with: request)
+        dataTask = task
         task.resume()
         self.result = result
     }
@@ -362,6 +364,13 @@ extension SwiftImageDownloaderPlugin: URLSessionDataDelegate {
 extension SwiftImageDownloaderPlugin: URLSessionDelegate {
     public func urlSession(_: URLSession, task downloadTask: URLSessionTask, didCompleteWithError error: Error?) {
         if error != nil {
+            if let code = (error as NSError?)?.code {
+                if code == NSURLErrorCancelled {
+                    result(nil)
+                    result = nil
+                    return
+                }
+            }
             result(FlutterError(code: "request_error", message: error?.localizedDescription, details: error))
             result = nil
             return

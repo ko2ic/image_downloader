@@ -52,13 +52,15 @@ class ImageDownloaderPlugin(
 
     private var inPublicDir: Boolean = true
 
+    private var callback: CallbackImpl? = null
+
     override fun onMethodCall(call: MethodCall, result: Result) {
         when (call.method) {
             "downloadImage" -> {
                 inPublicDir = call.argument<Boolean>("inPublicDir") ?: true
 
                 val permissionCallback = CallbackImpl(call, result, channel, registrar.context())
-
+                this.callback = permissionCallback
                 if (inPublicDir) {
                     this.permissionListener.callback = permissionCallback
                     if (permissionListener.alreadyGranted()) {
@@ -67,6 +69,9 @@ class ImageDownloaderPlugin(
                 } else {
                     permissionCallback.granted()
                 }
+            }
+            "cancel" -> {
+                callback?.downloader?.cancel()
             }
             "open" -> {
                 open(call, result)
@@ -201,6 +206,8 @@ class ImageDownloaderPlugin(
     ) :
         ImageDownloderPermissionListener.Callback {
 
+        var downloader: Downloader? = null
+
         override fun granted() {
             val url = call.argument<String>("url")
                 ?: throw IllegalArgumentException("url is required.")
@@ -237,6 +244,7 @@ class ImageDownloaderPlugin(
             }
 
             val downloader = Downloader(context, request)
+            this.downloader = downloader
 
             downloader.execute(onNext = {
                 Log.d(LOGGER_TAG, it.result.toString())

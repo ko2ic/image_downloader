@@ -66,6 +66,12 @@ class _MyAppState extends State<MyApp> {
                       ),
                 RaisedButton(
                   onPressed: () {
+                    ImageDownloader.cancel();
+                  },
+                  child: Text("Cancel"),
+                ),
+                RaisedButton(
+                  onPressed: () {
                     _downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/bigsize.jpg");
                   },
                   child: Text("default destination"),
