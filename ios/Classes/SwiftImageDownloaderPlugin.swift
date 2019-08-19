@@ -32,10 +32,12 @@ public class SwiftImageDownloaderPlugin: NSObject, FlutterPlugin {
                 return
             }
 
+            let headers = dict["headers"] as? [String: String]
+
             PHPhotoLibrary.requestAuthorization { status in
                 switch status {
                 case .authorized:
-                    self.downloadImage(url, result)
+                    self.downloadImage(url, headers, result)
                 case .denied, .restricted:
                     result(nil)
                 case .notDetermined:
@@ -82,9 +84,19 @@ public class SwiftImageDownloaderPlugin: NSObject, FlutterPlugin {
         completion(imageId)
     }
 
-    private func downloadImage(_ url: String, _ result: @escaping FlutterResult) {
+    private func downloadImage(_ url: String, _ headers: [String: String]?, _ result: @escaping FlutterResult) {
         let session = URLSession(configuration: URLSessionConfiguration.default, delegate: self, delegateQueue: OperationQueue.main)
-        let task = session.dataTask(with: URL(string: url)!)
+        let url = URL(string: url)!
+        var request = URLRequest(url: url)
+
+        if let headers = headers {
+            headers.forEach { (arg: (key: String, value: String)) in
+                let (key, value) = arg
+                request.addValue(value, forHTTPHeaderField: key)
+            }
+        }
+
+        let task = session.dataTask(with: request)
         task.resume()
         self.result = result
     }

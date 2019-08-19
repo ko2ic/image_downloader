@@ -204,6 +204,9 @@ class ImageDownloaderPlugin(
         override fun granted() {
             val url = call.argument<String>("url")
                 ?: throw IllegalArgumentException("url is required.")
+
+            val headers: Map<String, String>? = call.argument<Map<String, String>>("headers")
+
             val inPublicDir = call.argument<Boolean>("inPublicDir") ?: true
             val directoryType = call.argument<String>("directory") ?: "DIRECTORY_DOWNLOADS"
             val subDirectory = call.argument<String>("subDirectory")
@@ -219,6 +222,12 @@ class ImageDownloaderPlugin(
 
             request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             request.allowScanningByMediaScanner()
+
+            if (headers != null) {
+                for ((key, value) in headers) {
+                    request.addRequestHeader(key, value)
+                }
+            }
 
             if (inPublicDir) {
                 request.setDestinationInExternalPublicDir(directory, tempSubDirectory)

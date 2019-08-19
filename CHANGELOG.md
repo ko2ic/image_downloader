@@ -1,3 +1,7 @@
+## 0.17.0
+
+* Supports HTTP Request Header.
+
 ## 0.16.2
 
 * Fix swift_version to 4.2.
