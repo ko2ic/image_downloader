@@ -1,3 +1,7 @@
+## 0.18.1
+
+* Fix warning of analytics.
+
 ## 0.18.0
 
 * Supports to cancel downloading.(only single download)

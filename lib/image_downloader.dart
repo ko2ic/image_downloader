@@ -45,6 +45,7 @@ class ImageDownloader {
         int progress = call.arguments['progress'] as int;
         onProgressUpdate(id, progress);
       }
+      return Future.value(null);
     });
   }
 
