@@ -16,7 +16,7 @@ Add the following keys to your Info.plist file, located in <project root>/ios/Ru
 
 Add this permission in ```AndroidManifest.xml```. (If you call ```AndroidDestinationType#inExternalFilesDir()```, This setting is not necessary.)
 
-```
+```xml
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 ```
 
@@ -24,7 +24,7 @@ Add this permission in ```AndroidManifest.xml```. (If you call ```AndroidDestina
 
 ### Basic
 
-```
+```dart
 try {
   // Saved with this method.
   var imageId = await ImageDownloader.downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter.png");
@@ -65,7 +65,7 @@ In addition, there is also custom.
 For example, the following sources is stored in ```/storage/emulated/0/sample/custom/sample.gif```.       
 (Depends on the device.)
 
-```
+```dart
 await ImageDownloader.downloadImage(url,
                                     destination: AndroidDestinationType.custom('sample')                                  
                                     ..subDirectory("custom/sample.gif"),
@@ -75,7 +75,7 @@ await ImageDownloader.downloadImage(url,
 For example, the following sources is stored in ```/storage/emulated/0/Android/data/<applicationId>/files/sample/custom/sample.gif```by calling ```inExternalFilesDir()``` .    
 (Depends on the device.) 
  
-```
+```dart
  await ImageDownloader.downloadImage(url,
                                      destination: AndroidDestinationType.custom('sample')
                                      ..inExternalFilesDir()
@@ -149,7 +149,7 @@ Note: in the case of android, to use this feature, the following settings are re
 
 Add the following within \<application\> tag in ```AndroidManifest.xml``` .
 
-```
+```xml
         <provider
                 android:name="com.ko2ic.imagedownloader.FileProvider"
                 android:authorities="${applicationId}.image_downloader.provider"
