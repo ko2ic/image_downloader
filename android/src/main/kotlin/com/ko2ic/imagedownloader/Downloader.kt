@@ -28,7 +28,7 @@ class Downloader(private val context: Context, private val request: Request) {
         receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 intent ?: return
-                if (ACTION_DOWNLOAD_COMPLETE.equals(intent.action)) {
+                if (ACTION_DOWNLOAD_COMPLETE == intent.action) {
                     val id = intent.getLongExtra(EXTRA_DOWNLOAD_ID, -1)
                     resolveDownloadStatus(id, onNext, onError, onComplete)
                 }

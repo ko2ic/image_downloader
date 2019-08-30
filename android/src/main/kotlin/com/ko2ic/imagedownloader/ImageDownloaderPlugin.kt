@@ -33,14 +33,14 @@ import java.util.*
 class ImageDownloaderPlugin(
     private val registrar: Registrar,
     private val channel: MethodChannel,
-    private val permissionListener: ImageDownloderPermissionListener
+    private val permissionListener: ImageDownloaderPermissionListener
 ) : MethodCallHandler {
     companion object {
         @JvmStatic
         fun registerWith(registrar: Registrar) {
             val channel = MethodChannel(registrar.messenger(), "plugins.ko2ic.com/image_downloader")
 
-            val listener = ImageDownloderPermissionListener(registrar.activity())
+            val listener = ImageDownloaderPermissionListener(registrar.activity())
             registrar.addRequestPermissionsResultListener(listener)
 
             channel.setMethodCallHandler(ImageDownloaderPlugin(registrar, channel, listener))
@@ -167,7 +167,7 @@ class ImageDownloaderPlugin(
                 arrayOf(imageId),
                 null
             ).use {
-                if (it == null) throw IllegalStateException("$imageId is an imageId that does not exist.")
+                checkNotNull(it) { "$imageId is an imageId that does not exist." }
                 it.moveToFirst()
                 val path = it.getString(it.getColumnIndex(MediaStore.Images.Media.DATA))
                 val name = it.getString(it.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME))
@@ -204,7 +204,7 @@ class ImageDownloaderPlugin(
         private val channel: MethodChannel,
         private val context: Context
     ) :
-        ImageDownloderPermissionListener.Callback {
+        ImageDownloaderPermissionListener.Callback {
 
         var downloader: Downloader? = null
 
@@ -344,7 +344,7 @@ class ImageDownloaderPlugin(
                     arrayOf(file.absolutePath),
                     null
                 ).use {
-                    if (it == null) throw java.lang.IllegalStateException("${file.absolutePath} is not found.")
+                    checkNotNull(it) { "${file.absolutePath} is not found." }
                     it.moveToFirst()
                     it.getString(it.getColumnIndex(MediaStore.Images.Media._ID))
                 }
