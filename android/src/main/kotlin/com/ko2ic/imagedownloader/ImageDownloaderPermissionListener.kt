@@ -7,7 +7,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import io.flutter.plugin.common.PluginRegistry
 
-class ImageDownloderPermissionListener(private val activity: Activity) :
+class ImageDownloaderPermissionListener(private val activity: Activity) :
     PluginRegistry.RequestPermissionsResultListener {
 
     private val permissionRequestId: Int = 2578166
