@@ -1,3 +1,10 @@
+## 0.19.0
+
+* Fixed AndroidX migration
+* Fixed typo
+* Bump Gradle and Kotlin
+
+
 ## 0.18.1
 
 * Fix warning of analytics.
