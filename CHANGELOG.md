@@ -1,3 +1,9 @@
+## 0.19.1
+
+* Fix AndroidX migration
+* Fix to return early when there is no activity
+* Create a sample for http communication on Android9
+
 ## 0.19.0
 
 * Fixed AndroidX migration
