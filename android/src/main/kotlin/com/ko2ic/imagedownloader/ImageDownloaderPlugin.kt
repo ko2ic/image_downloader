@@ -39,12 +39,11 @@ class ImageDownloaderPlugin(
         @JvmStatic
         fun registerWith(registrar: Registrar) {
             val channel = MethodChannel(registrar.messenger(), "plugins.ko2ic.com/image_downloader")
+            val activity = registrar.activity() ?: return
 
-            val listener = ImageDownloaderPermissionListener(registrar.activity())
+            val listener = ImageDownloaderPermissionListener(activity)
             registrar.addRequestPermissionsResultListener(listener)
-
             channel.setMethodCallHandler(ImageDownloaderPlugin(registrar, channel, listener))
-
         }
 
         private const val LOGGER_TAG = "image_downloader"
