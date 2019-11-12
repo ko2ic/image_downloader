@@ -170,7 +170,7 @@ Add ```provider_paths.xml```  in ```android/app/src/main/res/xml/``` .
 </paths>
 ```
 
-## Error Hnadling
+## Error Handling
 
 ### downloadImage()
 
