@@ -1,3 +1,7 @@
+## 0.19.2
+* Got rid of download notification
+* Support to bitcode
+
 ## 0.19.1
 
 * Fix AndroidX migration
