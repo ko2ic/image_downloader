@@ -17,7 +17,7 @@ A new flutter plugin project.
   s.dependency 'Flutter'
   s.pod_target_xcconfig = {
    'FRAMEWORK_SEARCH_PATHS' => '$(inherited) $(PODS_ROOT)/**',
-   'OTHER_LDFLAGS' => '$(inherited) -undefined dynamic_lookup'
+   'OTHER_LDFLAGS' => '$(inherited)'
   }
   s.ios.deployment_target = '8.0'
   s.swift_version = '4.2'
