@@ -50,6 +50,7 @@ class ImageDownloaderPlugin(
     }
 
     private var inPublicDir: Boolean = true
+    private var iMimeType: String = ""
 
     private var callback: CallbackImpl? = null
 
@@ -57,6 +58,7 @@ class ImageDownloaderPlugin(
         when (call.method) {
             "downloadImage" -> {
                 inPublicDir = call.argument<Boolean>("inPublicDir") ?: true
+                iMimeType = call.argument<String>("mimeType") ?: ""
 
                 val permissionCallback = CallbackImpl(call, result, channel, registrar.context())
                 this.callback = permissionCallback
@@ -156,11 +158,16 @@ class ImageDownloaderPlugin(
     }
 
     private fun findFileData(imageId: String, context: Context): FileData {
-
+        var contentUri: Uri
+        if (!iMimeType.isEmpty() && iMimeType.startsWith("video")) {
+            contentUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        } else {
+            contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        }
         if (inPublicDir) {
             val contentResolver = context.contentResolver
             return contentResolver.query(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                contentUri,
                 null,
                 "${MediaStore.Images.Media._ID}=?",
                 arrayOf(imageId),
@@ -213,6 +220,7 @@ class ImageDownloaderPlugin(
 
             val headers: Map<String, String>? = call.argument<Map<String, String>>("headers")
 
+            val sendMimeType = call.argument<String>("mimeType") ?: null
             val inPublicDir = call.argument<Boolean>("inPublicDir") ?: true
             val directoryType = call.argument<String>("directory") ?: "DIRECTORY_DOWNLOADS"
             val subDirectory = call.argument<String>("subDirectory")
@@ -298,7 +306,7 @@ class ImageDownloaderPlugin(
                     val newMimeType = mimeType
                         ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(newFile.extension)
                         ?: ""
-                    val imageId = saveToDatabase(newFile, newMimeType, inPublicDir)
+                    val imageId = saveToDatabase(newFile, sendMimeType ?: newMimeType, inPublicDir)
 
                     result.success(imageId)
                 }
@@ -325,19 +333,25 @@ class ImageDownloaderPlugin(
             val size = file.length()
 
             val contentValues = ContentValues()
+
             contentValues.put(MediaStore.Images.Media.MIME_TYPE, mimeType)
             contentValues.put(MediaStore.Images.Media.DATA, path)
             contentValues.put(MediaStore.Images.ImageColumns.DISPLAY_NAME, name)
             contentValues.put(MediaStore.Images.ImageColumns.SIZE, size)
+            var contentUri: Uri
+            if (mimeType.startsWith("video")) {
+                contentUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+            } else {
+                contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+            }
             if (inPublicDir) {
-
                 context.contentResolver.insert(
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    contentUri,
                     contentValues
                 )
 
                 return context.contentResolver.query(
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    contentUri,
                     arrayOf(MediaStore.Images.Media._ID, MediaStore.Images.Media.DATA),
                     "${MediaStore.Images.Media.DATA}=?",
                     arrayOf(file.absolutePath),

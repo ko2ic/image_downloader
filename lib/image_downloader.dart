@@ -24,12 +24,14 @@ class ImageDownloader {
   /// imageId is in case of Adroid,  MediaStore.Images.Media._ID, in case of ios, PHObjectPlaceholder#localIdentifier.
   static Future<String> downloadImage(
     String url, {
+    String mimeType,
     Map<String, String> headers,
     AndroidDestinationType destination,
   }) async {
     return await _channel.invokeMethod('downloadImage', <String, dynamic>{
       'url': url,
       'headers': headers,
+      'mimeType': mimeType,
       'inPublicDir': destination?._inPublicDir,
       'directory': destination?._directory,
       'subDirectory': destination?._subDirectory,
