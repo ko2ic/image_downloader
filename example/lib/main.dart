@@ -145,6 +145,13 @@ class _MyAppState extends State<MyApp> {
                   },
                   child: Text("multiple downlod"),
                 ),
+                RaisedButton(
+                  onPressed: () => _downloadImage(
+                    "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/sample.webp",
+                    outputMimeType: "image/png",
+                  ),
+                  child: Text("download webp(only Android)"),
+                ),
                 (_imageFile == null) ? Container() : Image.file(_imageFile),
                 GridView.count(
                   crossAxisCount: 4,
@@ -166,7 +173,7 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  Future<void> _downloadImage(String url, {AndroidDestinationType destination, bool whenError = false}) async {
+  Future<void> _downloadImage(String url, {AndroidDestinationType destination, bool whenError = false, String outputMimeType}) async {
     String fileName;
     String path;
     int size;
@@ -175,7 +182,7 @@ class _MyAppState extends State<MyApp> {
       String imageId;
 
       if (whenError) {
-        imageId = await ImageDownloader.downloadImage(url).catchError((error) {
+        imageId = await ImageDownloader.downloadImage(url, outputMimeType: outputMimeType).catchError((error) {
           if (error is PlatformException) {
             var path = "";
             if (error.code == "404") {
@@ -193,14 +200,19 @@ class _MyAppState extends State<MyApp> {
           print(error);
         }).timeout(Duration(seconds: 10), onTimeout: () {
           print("timeout");
+          return;
         });
       } else {
         if (destination == null) {
-          imageId = await ImageDownloader.downloadImage(url);
+          imageId = await ImageDownloader.downloadImage(
+            url,
+            outputMimeType: outputMimeType,
+          );
         } else {
           imageId = await ImageDownloader.downloadImage(
             url,
             destination: destination,
+            outputMimeType: outputMimeType,
           );
         }
       }
@@ -231,6 +243,7 @@ class _MyAppState extends State<MyApp> {
       if (!_mimeType.contains("video")) {
         _imageFile = File(path);
       }
+      return;
     });
   }
 }

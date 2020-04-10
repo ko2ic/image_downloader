@@ -31,9 +31,9 @@ import java.util.*
 
 
 class ImageDownloaderPlugin(
-    private val registrar: Registrar,
-    private val channel: MethodChannel,
-    private val permissionListener: ImageDownloaderPermissionListener
+        private val registrar: Registrar,
+        private val channel: MethodChannel,
+        private val permissionListener: ImageDownloaderPermissionListener
 ) : MethodCallHandler {
     companion object {
         @JvmStatic
@@ -78,25 +78,25 @@ class ImageDownloaderPlugin(
 
             "findPath" -> {
                 val imageId = call.argument<String>("imageId")
-                    ?: throw IllegalArgumentException("imageId is required.")
+                        ?: throw IllegalArgumentException("imageId is required.")
                 val filePath = findPath(imageId, registrar.context())
                 result.success(filePath)
             }
             "findName" -> {
                 val imageId = call.argument<String>("imageId")
-                    ?: throw IllegalArgumentException("imageId is required.")
+                        ?: throw IllegalArgumentException("imageId is required.")
                 val fileName = findName(imageId, registrar.context())
                 result.success(fileName)
             }
             "findByteSize" -> {
                 val imageId = call.argument<String>("imageId")
-                    ?: throw IllegalArgumentException("imageId is required.")
+                        ?: throw IllegalArgumentException("imageId is required.")
                 val fileSize = findByteSize(imageId, registrar.context())
                 result.success(fileSize)
             }
             "findMimeType" -> {
                 val imageId = call.argument<String>("imageId")
-                    ?: throw IllegalArgumentException("imageId is required.")
+                        ?: throw IllegalArgumentException("imageId is required.")
                 val mimeType = findMimeType(imageId, registrar.context())
                 result.success(mimeType)
             }
@@ -107,7 +107,7 @@ class ImageDownloaderPlugin(
     private fun open(call: MethodCall, result: Result) {
 
         val path = call.argument<String>("path")
-            ?: throw IllegalArgumentException("path is required.")
+                ?: throw IllegalArgumentException("path is required.")
 
         val file = File(path)
         val intent = Intent(Intent.ACTION_VIEW)
@@ -160,11 +160,11 @@ class ImageDownloaderPlugin(
         if (inPublicDir) {
             val contentResolver = context.contentResolver
             return contentResolver.query(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                null,
-                "${MediaStore.Images.Media._ID}=?",
-                arrayOf(imageId),
-                null
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    null,
+                    "${MediaStore.Images.Media._ID}=?",
+                    arrayOf(imageId),
+                    null
             ).use {
                 checkNotNull(it) { "$imageId is an imageId that does not exist." }
                 it.moveToFirst()
@@ -177,48 +177,49 @@ class ImageDownloaderPlugin(
         } else {
             val db = TemporaryDatabase(context).readableDatabase
             return db.query(
-                TABLE_NAME,
-                COLUMNS,
-                "${MediaStore.Images.Media._ID}=?",
-                arrayOf(imageId),
-                null,
-                null,
-                null,
-                null
+                    TABLE_NAME,
+                    COLUMNS,
+                    "${MediaStore.Images.Media._ID}=?",
+                    arrayOf(imageId),
+                    null,
+                    null,
+                    null,
+                    null
             )
-                .use {
-                    it.moveToFirst()
-                    val path = it.getString(it.getColumnIndex(MediaStore.Images.Media.DATA))
-                    val name = it.getString(it.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME))
-                    val size = it.getInt(it.getColumnIndex(MediaStore.Images.Media.SIZE))
-                    val mimeType = it.getString(it.getColumnIndex(MediaStore.Images.Media.MIME_TYPE))
-                    FileData(path = path, name = name, byteSize = size, mimeType = mimeType)
-                }
+                    .use {
+                        it.moveToFirst()
+                        val path = it.getString(it.getColumnIndex(MediaStore.Images.Media.DATA))
+                        val name = it.getString(it.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME))
+                        val size = it.getInt(it.getColumnIndex(MediaStore.Images.Media.SIZE))
+                        val mimeType = it.getString(it.getColumnIndex(MediaStore.Images.Media.MIME_TYPE))
+                        FileData(path = path, name = name, byteSize = size, mimeType = mimeType)
+                    }
         }
     }
 
     class CallbackImpl(
-        private val call: MethodCall,
-        private val result: Result,
-        private val channel: MethodChannel,
-        private val context: Context
+            private val call: MethodCall,
+            private val result: Result,
+            private val channel: MethodChannel,
+            private val context: Context
     ) :
-        ImageDownloaderPermissionListener.Callback {
+            ImageDownloaderPermissionListener.Callback {
 
         var downloader: Downloader? = null
 
         override fun granted() {
             val url = call.argument<String>("url")
-                ?: throw IllegalArgumentException("url is required.")
+                    ?: throw IllegalArgumentException("url is required.")
 
             val headers: Map<String, String>? = call.argument<Map<String, String>>("headers")
 
+            val outputMimeType = call.argument<String>("mimeType")
             val inPublicDir = call.argument<Boolean>("inPublicDir") ?: true
             val directoryType = call.argument<String>("directory") ?: "DIRECTORY_DOWNLOADS"
             val subDirectory = call.argument<String>("subDirectory")
             val tempSubDirectory = subDirectory ?: SimpleDateFormat(
-                "yyyy-MM-dd.HH.mm.sss",
-                Locale.getDefault()
+                    "yyyy-MM-dd.HH.mm.sss",
+                    Locale.getDefault()
             ).format(Date())
 
             val directory = convertToDirectory(directoryType)
@@ -278,7 +279,8 @@ class ImageDownloaderPlugin(
                     result.error("save_error", "Couldn't save ${file.absolutePath ?: tempSubDirectory} ", null)
                 } else {
                     val stream = BufferedInputStream(FileInputStream(file))
-                    val mimeType = URLConnection.guessContentTypeFromStream(stream)
+                    val mimeType = outputMimeType
+                            ?: URLConnection.guessContentTypeFromStream(stream)
 
                     val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
 
@@ -296,9 +298,9 @@ class ImageDownloaderPlugin(
 
                     file.renameTo(newFile)
                     val newMimeType = mimeType
-                        ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(newFile.extension)
-                        ?: ""
-                    val imageId = saveToDatabase(newFile, newMimeType, inPublicDir)
+                            ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(newFile.extension)
+                            ?: ""
+                    val imageId = saveToDatabase(newFile, mimeType ?: newMimeType, inPublicDir)
 
                     result.success(imageId)
                 }
@@ -332,16 +334,15 @@ class ImageDownloaderPlugin(
             if (inPublicDir) {
 
                 context.contentResolver.insert(
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                    contentValues
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        contentValues
                 )
-
                 return context.contentResolver.query(
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                    arrayOf(MediaStore.Images.Media._ID, MediaStore.Images.Media.DATA),
-                    "${MediaStore.Images.Media.DATA}=?",
-                    arrayOf(file.absolutePath),
-                    null
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        arrayOf(MediaStore.Images.Media._ID, MediaStore.Images.Media.DATA),
+                        "${MediaStore.Images.Media.DATA}=?",
+                        arrayOf(file.absolutePath),
+                        null
                 ).use {
                     checkNotNull(it) { "${file.absolutePath} is not found." }
                     it.moveToFirst()
@@ -351,8 +352,8 @@ class ImageDownloaderPlugin(
                 val db = TemporaryDatabase(context)
                 val allowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz0123456789"
                 val id = (1..20)
-                    .map { allowedChars.random() }
-                    .joinToString("")
+                        .map { allowedChars.random() }
+                        .joinToString("")
                 contentValues.put(MediaStore.Images.Media._ID, id)
                 db.writableDatabase.insert(TABLE_NAME, null, contentValues)
                 return id
@@ -363,19 +364,19 @@ class ImageDownloaderPlugin(
     private data class FileData(val path: String, val name: String, val byteSize: Int, val mimeType: String)
 
     class TemporaryDatabase(context: Context) :
-        SQLiteOpenHelper(context, TABLE_NAME, null, DATABASE_VERSION) {
+            SQLiteOpenHelper(context, TABLE_NAME, null, DATABASE_VERSION) {
 
 
         companion object {
 
             val COLUMNS =
-                arrayOf(
-                    MediaStore.Images.Media._ID,
-                    MediaStore.Images.Media.MIME_TYPE,
-                    MediaStore.Images.Media.DATA,
-                    MediaStore.Images.ImageColumns.DISPLAY_NAME,
-                    MediaStore.Images.ImageColumns.SIZE
-                )
+                    arrayOf(
+                            MediaStore.Images.Media._ID,
+                            MediaStore.Images.Media.MIME_TYPE,
+                            MediaStore.Images.Media.DATA,
+                            MediaStore.Images.ImageColumns.DISPLAY_NAME,
+                            MediaStore.Images.ImageColumns.SIZE
+                    )
 
             private const val DATABASE_VERSION = 1
             const val TABLE_NAME = "image_downloader_temporary"
