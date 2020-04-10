@@ -55,9 +55,11 @@ class _MyAppState extends State<MyApp> {
                     : Builder(
                         builder: (context) => RaisedButton(
                           onPressed: () async {
-                            await ImageDownloader.open(_path).catchError((error) {
+                            await ImageDownloader.open(_path)
+                                .catchError((error) {
                               Scaffold.of(context).showSnackBar(SnackBar(
-                                content: Text((error as PlatformException).message),
+                                content:
+                                    Text((error as PlatformException).message),
                               ));
                             });
                           },
@@ -72,7 +74,8 @@ class _MyAppState extends State<MyApp> {
                 ),
                 RaisedButton(
                   onPressed: () {
-                    _downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/bigsize.jpg");
+                    _downloadImage(
+                        "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/bigsize.jpg");
                   },
                   child: Text("default destination"),
                 ),
@@ -89,13 +92,17 @@ class _MyAppState extends State<MyApp> {
                 ),
                 RaisedButton(
                   onPressed: () {
-                    _downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter_no.png", whenError: true);
+                    _downloadImage(
+                        "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter_no.png",
+                        whenError: true);
                   },
                   child: Text("404 error"),
                 ),
                 RaisedButton(
                   onPressed: () {
-                    _downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/sample.mkv", whenError: true);
+                    _downloadImage(
+                        "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/sample.mkv",
+                        whenError: true);
                     //_downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/sample.3gp");
                   },
                   child: Text("unsupported file error(only ios)"),
@@ -104,7 +111,8 @@ class _MyAppState extends State<MyApp> {
                   onPressed: () {
                     //_downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/sample.mp4");
                     //_downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/sample.m4v");
-                    _downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/sample.mov");
+                    _downloadImage(
+                        "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/sample.mov");
                   },
                   child: Text("movie"),
                 ),
@@ -145,6 +153,10 @@ class _MyAppState extends State<MyApp> {
                   },
                   child: Text("multiple downlod"),
                 ),
+                RaisedButton(
+                  onPressed: () => onDownloadButtonClick(),
+                  child: Text("download DCIM"),
+                ),
                 (_imageFile == null) ? Container() : Image.file(_imageFile),
                 GridView.count(
                   crossAxisCount: 4,
@@ -166,7 +178,8 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  Future<void> _downloadImage(String url, {AndroidDestinationType destination, bool whenError = false}) async {
+  Future<void> _downloadImage(String url,
+      {AndroidDestinationType destination, bool whenError = false}) async {
     String fileName;
     String path;
     int size;
@@ -232,5 +245,22 @@ class _MyAppState extends State<MyApp> {
         _imageFile = File(path);
       }
     });
+  }
+
+  /// 下载按钮点击
+  void onDownloadButtonClick() async {
+    try {
+      // Saved with this method.
+      var imageId = await ImageDownloader.downloadImage(
+//        "",
+        "https://images.debug.100.com.tw/service/2017/06/27/src_149854272953914708.jpg!t1500-v5.webp",
+        outputMimeType: "image/png",
+        destination: AndroidDestinationType.directoryDCIM,
+      );
+      if (imageId == null) return;
+      print("保存成功");
+    } on PlatformException {
+      print("保存失敗");
+    }
   }
 }

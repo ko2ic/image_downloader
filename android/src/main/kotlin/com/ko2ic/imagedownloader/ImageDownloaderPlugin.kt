@@ -213,6 +213,7 @@ class ImageDownloaderPlugin(
 
             val headers: Map<String, String>? = call.argument<Map<String, String>>("headers")
 
+            val iMimeType = call.argument<String>("mimeType")
             val inPublicDir = call.argument<Boolean>("inPublicDir") ?: true
             val directoryType = call.argument<String>("directory") ?: "DIRECTORY_DOWNLOADS"
             val subDirectory = call.argument<String>("subDirectory")
@@ -278,7 +279,7 @@ class ImageDownloaderPlugin(
                     result.error("save_error", "Couldn't save ${file.absolutePath ?: tempSubDirectory} ", null)
                 } else {
                     val stream = BufferedInputStream(FileInputStream(file))
-                    val mimeType = URLConnection.guessContentTypeFromStream(stream)
+                    val mimeType = iMimeType ?: URLConnection.guessContentTypeFromStream(stream)
 
                     val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
 
@@ -298,7 +299,7 @@ class ImageDownloaderPlugin(
                     val newMimeType = mimeType
                         ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(newFile.extension)
                         ?: ""
-                    val imageId = saveToDatabase(newFile, newMimeType, inPublicDir)
+                    val imageId = saveToDatabase(newFile, iMimeType ?: newMimeType, inPublicDir)
 
                     result.success(imageId)
                 }
@@ -335,7 +336,6 @@ class ImageDownloaderPlugin(
                     MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                     contentValues
                 )
-
                 return context.contentResolver.query(
                     MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                     arrayOf(MediaStore.Images.Media._ID, MediaStore.Images.Media.DATA),
