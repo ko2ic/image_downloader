@@ -1,3 +1,6 @@
+## 0.20.0
+* Support to webp(only Android)
+
 ## 0.19.2
 * Got rid of download notification
 * Support to bitcode
