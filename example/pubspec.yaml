@@ -1,6 +1,7 @@
 name: image_downloader_example
 description: Demonstrates how to use the image_downloader plugin.
 publish_to: 'none'
+version: 0.0.1+1
 
 environment:
   sdk: ">=2.0.0 <3.0.0"
