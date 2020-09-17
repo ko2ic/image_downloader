@@ -41,6 +41,8 @@ public class SwiftImageDownloaderPlugin: NSObject, FlutterPlugin {
                     result(nil)
                 case .notDetermined:
                     result(nil)
+                case .limited:
+                    result(nil)
                 }
             }
         case "cancel":
