@@ -1,3 +1,6 @@
+## 0.20.1
+* Fix for build for XCode 12
+
 ## 0.20.0
 * Support to webp(only Android)
 
