@@ -55,9 +55,11 @@ class _MyAppState extends State<MyApp> {
                     : Builder(
                         builder: (context) => RaisedButton(
                           onPressed: () async {
-                            await ImageDownloader.open(_path).catchError((error) {
+                            await ImageDownloader.open(_path)
+                                .catchError((error) {
                               Scaffold.of(context).showSnackBar(SnackBar(
-                                content: Text((error as PlatformException).message),
+                                content:
+                                    Text((error as PlatformException).message),
                               ));
                             });
                           },
@@ -72,7 +74,8 @@ class _MyAppState extends State<MyApp> {
                 ),
                 RaisedButton(
                   onPressed: () {
-                    _downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/bigsize.jpg");
+                    _downloadImage(
+                        "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/bigsize.jpg");
                   },
                   child: Text("default destination"),
                 ),
@@ -89,13 +92,17 @@ class _MyAppState extends State<MyApp> {
                 ),
                 RaisedButton(
                   onPressed: () {
-                    _downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter_no.png", whenError: true);
+                    _downloadImage(
+                        "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/flutter_no.png",
+                        whenError: true);
                   },
                   child: Text("404 error"),
                 ),
                 RaisedButton(
                   onPressed: () {
-                    _downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/sample.mkv", whenError: true);
+                    _downloadImage(
+                        "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/sample.mkv",
+                        whenError: true);
                     //_downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/sample.3gp");
                   },
                   child: Text("unsupported file error(only ios)"),
@@ -104,7 +111,8 @@ class _MyAppState extends State<MyApp> {
                   onPressed: () {
                     //_downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/sample.mp4");
                     //_downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/sample.m4v");
-                    _downloadImage("https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/sample.mov");
+                    _downloadImage(
+                        "https://raw.githubusercontent.com/wiki/ko2ic/image_downloader/images/sample.mov");
                   },
                   child: Text("movie"),
                 ),
@@ -173,7 +181,10 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  Future<void> _downloadImage(String url, {AndroidDestinationType destination, bool whenError = false, String outputMimeType}) async {
+  Future<void> _downloadImage(String url,
+      {AndroidDestinationType destination,
+      bool whenError = false,
+      String outputMimeType}) async {
     String fileName;
     String path;
     int size;
@@ -182,7 +193,9 @@ class _MyAppState extends State<MyApp> {
       String imageId;
 
       if (whenError) {
-        imageId = await ImageDownloader.downloadImage(url, outputMimeType: outputMimeType).catchError((error) {
+        imageId = await ImageDownloader.downloadImage(url,
+                outputMimeType: outputMimeType)
+            .catchError((error) {
           if (error is PlatformException) {
             var path = "";
             if (error.code == "404") {

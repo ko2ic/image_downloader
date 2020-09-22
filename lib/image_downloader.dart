@@ -6,7 +6,8 @@ import 'package:flutter/services.dart';
 /// Provide the function to save the image on the Internet to each devices.
 class ImageDownloader {
   /// MethodChannel of image_downloader.
-  static const MethodChannel _channel = const MethodChannel('plugins.ko2ic.com/image_downloader');
+  static const MethodChannel _channel =
+      const MethodChannel('plugins.ko2ic.com/image_downloader');
 
   /// private constructor.
   ImageDownloader._();
@@ -57,27 +58,36 @@ class ImageDownloader {
   }
 
   static Future<void> open(String localPath) async {
-    return await _channel.invokeMethod('open', <String, String>{'path': localPath});
+    return await _channel
+        .invokeMethod('open', <String, String>{'path': localPath});
   }
 
   /// Acquire the saved image name.
   static Future<String> findName(String imageId) async {
-    return await _channel.invokeMethod('findName', <String, String>{'imageId': imageId}).then<String>((dynamic result) => result);
+    return await _channel.invokeMethod('findName', <String, String>{
+      'imageId': imageId
+    }).then<String>((dynamic result) => result);
   }
 
   /// Acquire the saved image path.
   static Future<String> findPath(String imageId) async {
-    return await _channel.invokeMethod('findPath', <String, String>{'imageId': imageId}).then<String>((dynamic result) => result);
+    return await _channel.invokeMethod('findPath', <String, String>{
+      'imageId': imageId
+    }).then<String>((dynamic result) => result);
   }
 
   /// Acquire the saved image byte size.
   static Future<int> findByteSize(String imageId) async {
-    return await _channel.invokeMethod('findByteSize', <String, String>{'imageId': imageId}).then<int>((dynamic result) => result);
+    return await _channel.invokeMethod('findByteSize', <String, String>{
+      'imageId': imageId
+    }).then<int>((dynamic result) => result);
   }
 
   /// Acquire the saved image mimeType.
   static Future<String> findMimeType(String imageId) async {
-    return await _channel.invokeMethod('findMimeType', <String, String>{'imageId': imageId}).then<String>((dynamic result) => result);
+    return await _channel.invokeMethod('findMimeType', <String, String>{
+      'imageId': imageId
+    }).then<String>((dynamic result) => result);
   }
 }
 
@@ -121,14 +131,18 @@ class AndroidDestinationType {
   }
 
   /// Environment.DIRECTORY_DOWNLOADS
-  static final directoryDownloads = AndroidDestinationType._internal("DIRECTORY_DOWNLOADS");
+  static final directoryDownloads =
+      AndroidDestinationType._internal("DIRECTORY_DOWNLOADS");
 
   /// Environment.DIRECTORY_PICTURES
-  static final directoryPictures = AndroidDestinationType._internal("DIRECTORY_PICTURES");
+  static final directoryPictures =
+      AndroidDestinationType._internal("DIRECTORY_PICTURES");
 
   /// Environment.DIRECTORY_DCIM
-  static final directoryDCIM = AndroidDestinationType._internal("DIRECTORY_DCIM");
+  static final directoryDCIM =
+      AndroidDestinationType._internal("DIRECTORY_DCIM");
 
   /// Environment.DIRECTORY_MOVIES
-  static final directoryMovies = AndroidDestinationType._internal("DIRECTORY_MOVIES");
+  static final directoryMovies =
+      AndroidDestinationType._internal("DIRECTORY_MOVIES");
 }
