@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 /// Provide the function to save the image on the Internet to each devices.
@@ -23,29 +22,29 @@ class ImageDownloader {
   /// Otherwise it is a PlatformException.
   ///
   /// imageId is in case of Adroid,  MediaStore.Images.Media._ID, in case of ios, PHObjectPlaceholder#localIdentifier.
-  static Future<String> downloadImage(
+  static Future<String?> downloadImage(
     String url, {
-    String outputMimeType,
-    Map<String, String> headers,
-    AndroidDestinationType destination,
+    String? outputMimeType,
+    Map<String, String>? headers,
+    AndroidDestinationType? destination,
   }) async {
-    return await _channel.invokeMethod('downloadImage', <String, dynamic>{
+    return _channel.invokeMethod<String>('downloadImage', {
       'url': url,
       'mimeType': outputMimeType,
       'headers': headers,
       'inPublicDir': destination?._inPublicDir,
       'directory': destination?._directory,
       'subDirectory': destination?._subDirectory,
-    }).then<String>((dynamic result) => result);
+    });
   }
 
   /// You can get the progress with [onProgressUpdate].
   /// On iOS, cannot get imageId.
-  static void callback({Function(String, int) onProgressUpdate}) {
+  static void callback({required Function(String?, int) onProgressUpdate}) {
     _channel.setMethodCallHandler((MethodCall call) {
       if (call.method == 'onProgressUpdate') {
-        String id = call.arguments['image_id'] as String;
-        int progress = call.arguments['progress'] as int;
+        final id = call.arguments['image_id'] as String?;
+        final progress = call.arguments['progress'] as int;
         onProgressUpdate(id, progress);
       }
       return Future.value(null);
@@ -54,48 +53,39 @@ class ImageDownloader {
 
   /// cancel a single Downloading.
   static Future<void> cancel() async {
-    return await _channel.invokeMethod('cancel');
+    return _channel.invokeMethod('cancel');
   }
 
   static Future<void> open(String localPath) async {
-    return await _channel
-        .invokeMethod('open', <String, String>{'path': localPath});
+    return _channel.invokeMethod('open', {'path': localPath});
   }
 
   /// Acquire the saved image name.
-  static Future<String> findName(String imageId) async {
-    return await _channel.invokeMethod('findName', <String, String>{
-      'imageId': imageId
-    }).then<String>((dynamic result) => result);
+  static Future<String?> findName(String imageId) async {
+    return _channel.invokeMethod<String>('findName', {'imageId': imageId});
   }
 
   /// Acquire the saved image path.
-  static Future<String> findPath(String imageId) async {
-    return await _channel.invokeMethod('findPath', <String, String>{
-      'imageId': imageId
-    }).then<String>((dynamic result) => result);
+  static Future<String?> findPath(String imageId) async {
+    return _channel.invokeMethod<String>('findPath', {'imageId': imageId});
   }
 
   /// Acquire the saved image byte size.
-  static Future<int> findByteSize(String imageId) async {
-    return await _channel.invokeMethod('findByteSize', <String, String>{
-      'imageId': imageId
-    }).then<int>((dynamic result) => result);
+  static Future<int?> findByteSize(String imageId) async {
+    return _channel.invokeMethod<int>('findByteSize', {'imageId': imageId});
   }
 
   /// Acquire the saved image mimeType.
-  static Future<String> findMimeType(String imageId) async {
-    return await _channel.invokeMethod('findMimeType', <String, String>{
-      'imageId': imageId
-    }).then<String>((dynamic result) => result);
+  static Future<String?> findMimeType(String imageId) async {
+    return _channel.invokeMethod<String>('findMimeType', {'imageId': imageId});
   }
 }
 
 /// Save destination on android.
 class AndroidDestinationType {
   final String _directory;
-  String _subDirectory;
-  bool _inPublicDir = true;
+  String? _subDirectory;
+  bool? _inPublicDir;
 
   /// Save to specified [directory].
   /// If it is a empty string, it points to each route.
@@ -105,9 +95,9 @@ class AndroidDestinationType {
   /// For example, ```/storage/emulated/0/Android/data/<applicationId>/files``` .
   /// [subDirectory] can contain a file name.
   factory AndroidDestinationType.custom({
-    bool inPublicDir,
-    @required String directory,
-    String subDirectory,
+    bool? inPublicDir,
+    required String directory,
+    String? subDirectory,
   }) {
     return AndroidDestinationType._internal(directory)
       .._setInPublicDir(inPublicDir)
@@ -122,12 +112,12 @@ class AndroidDestinationType {
   }
 
   /// Specify sud directory that inclueds file name.
-  void subDirectory(String subDirectory) {
+  void subDirectory(String? subDirectory) {
     this._subDirectory = subDirectory;
   }
 
-  void _setInPublicDir(bool inPublicDir) {
-    this._inPublicDir = _inPublicDir;
+  void _setInPublicDir(bool? inPublicDir) {
+    this._inPublicDir = inPublicDir;
   }
 
   /// Environment.DIRECTORY_DOWNLOADS
