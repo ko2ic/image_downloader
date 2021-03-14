@@ -1,3 +1,6 @@
+## 0.30.0
+* Migrate to Null Safety
+
 ## 0.20.1
 * Fix for build for XCode 12
 
