@@ -1,5 +1,4 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     package="com.ko2ic.imagedownloader.example">
 
     <!-- The INTERNET permission is required for development. Specifically,
@@ -7,7 +6,6 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <application
-        android:name="io.flutter.app.FlutterApplication"
         android:icon="@mipmap/ic_launcher"
         android:label="image_downloader_example"
         android:networkSecurityConfig="@xml/network_security_config"
@@ -27,9 +25,6 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <meta-data
-                android:name="io.flutter.app.android.SplashScreenUntilFirstFrame"
-                android:value="true" />
         </activity>
         <provider
             android:name="com.ko2ic.imagedownloader.FileProvider"
@@ -44,7 +39,9 @@
         <uses-library
             android:name="org.apache.http.legacy"
             android:required="false" />
-
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
     </application>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
