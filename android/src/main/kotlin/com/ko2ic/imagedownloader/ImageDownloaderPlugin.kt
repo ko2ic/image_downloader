@@ -385,9 +385,12 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                     val newMimeType = mimeType
                         ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(newFile.extension)
                         ?: ""
-                    val imageId = saveToDatabase(newFile, mimeType ?: newMimeType, inPublicDir)
-
-                    result.success(imageId)
+                    try {
+                        val imageId = saveToDatabase(newFile, mimeType ?: newMimeType, inPublicDir)
+                        result.success(imageId)
+                    } catch (e: Exception) {
+                        result.error("failure_image_save", e.message, Log.getStackTraceString(e))
+                    }
                 }
             })
         }
