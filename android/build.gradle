@@ -18,9 +18,6 @@ rootProject.allprojects {
     repositories {
         google()
         jcenter()
-//        maven {
-//            url 'http://download.flutter.io'
-//        }
     }
 }
 
@@ -43,7 +40,6 @@ android {
 }
 
 dependencies {
-    //api "io.flutter:flutter_embedding_debug:1.0.0-d1bc06f032f9d6c148ea6b96b48261d6f545004f"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     implementation 'androidx.core:core-ktx:1.6.0'
 }

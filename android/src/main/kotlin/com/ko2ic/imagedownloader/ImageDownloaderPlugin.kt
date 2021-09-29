@@ -53,7 +53,7 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
 
     private lateinit var channel: MethodChannel
     private lateinit var permissionListener: ImageDownloaderPermissionListener
-    private lateinit var application: Context
+    private lateinit var applicationContext: Context
 
     private lateinit var pluginBinding: FlutterPlugin.FlutterPluginBinding
     private lateinit var activityBinding: ActivityPluginBinding
@@ -98,17 +98,17 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         activityBinding: ActivityPluginBinding?
     ) {
         this.activity = activity
-        this.application = applicationContext
+        this.applicationContext = applicationContext
         channel = MethodChannel(messenger, CHANNEL)
         channel.setMethodCallHandler(this)
-        val listener = ImageDownloaderPermissionListener(activity)
+        permissionListener = ImageDownloaderPermissionListener(activity)
 
         if (registrar != null) {
             // V1 embedding setup for activity listeners.
-            registrar.addRequestPermissionsResultListener(listener)
+            registrar.addRequestPermissionsResultListener(permissionListener)
         } else {
             // V2 embedding setup for activity listeners.
-            activityBinding?.addRequestPermissionsResultListener(listener)
+            activityBinding?.addRequestPermissionsResultListener(permissionListener)
         }
     }
 
@@ -126,7 +126,7 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 inPublicDir = call.argument<Boolean>("inPublicDir") ?: true
 
                 val permissionCallback =
-                    CallbackImpl(call, result, channel, application)
+                    CallbackImpl(call, result, channel, applicationContext)
                 this.callback = permissionCallback
                 if (inPublicDir) {
                     this.permissionListener.callback = permissionCallback
@@ -147,25 +147,25 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             "findPath" -> {
                 val imageId = call.argument<String>("imageId")
                         ?: throw IllegalArgumentException("imageId is required.")
-                val filePath = findPath(imageId, application)
+                val filePath = findPath(imageId, applicationContext)
                 result.success(filePath)
             }
             "findName" -> {
                 val imageId = call.argument<String>("imageId")
                         ?: throw IllegalArgumentException("imageId is required.")
-                val fileName = findName(imageId, application)
+                val fileName = findName(imageId, applicationContext)
                 result.success(fileName)
             }
             "findByteSize" -> {
                 val imageId = call.argument<String>("imageId")
                         ?: throw IllegalArgumentException("imageId is required.")
-                val fileSize = findByteSize(imageId, application)
+                val fileSize = findByteSize(imageId, applicationContext)
                 result.success(fileSize)
             }
             "findMimeType" -> {
                 val imageId = call.argument<String>("imageId")
                         ?: throw IllegalArgumentException("imageId is required.")
-                val mimeType = findMimeType(imageId, application)
+                val mimeType = findMimeType(imageId, applicationContext)
                 result.success(mimeType)
             }
             else -> result.notImplemented()
@@ -184,7 +184,7 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension)
 
         if (Build.VERSION.SDK_INT >= 24) {
-            val uri = FileProvider.getUriForFile(application, "${application.packageName}.image_downloader.provider", file)
+            val uri = FileProvider.getUriForFile(applicationContext, "${applicationContext.packageName}.image_downloader.provider", file)
             intent.setDataAndType(uri, mimeType)
         } else {
             intent.setDataAndType(Uri.fromFile(file), mimeType)
@@ -193,11 +193,11 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
 
-        val manager = application.packageManager
+        val manager = applicationContext.packageManager
         if (manager.queryIntentActivities(intent, 0).size == 0) {
             result.error("preview_error", "This file is not supported for previewing", null)
         } else {
-            application.startActivity(intent)
+            applicationContext.startActivity(intent)
         }
 
     }
