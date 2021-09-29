@@ -1,5 +1,6 @@
 package com.ko2ic.imagedownloader
 
+import android.app.Activity
 import android.app.DownloadManager
 import android.content.ContentValues
 import android.content.Context
@@ -17,11 +18,15 @@ import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import com.ko2ic.imagedownloader.ImageDownloaderPlugin.TemporaryDatabase.Companion.COLUMNS
 import com.ko2ic.imagedownloader.ImageDownloaderPlugin.TemporaryDatabase.Companion.TABLE_NAME
+import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
-import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry.Registrar
+import io.flutter.embedding.engine.plugins.activity.ActivityAware;
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
+
 import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileInputStream
@@ -30,35 +35,98 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 
-class ImageDownloaderPlugin(
-        private val registrar: Registrar,
-        private val channel: MethodChannel,
-        private val permissionListener: ImageDownloaderPermissionListener
-) : MethodCallHandler {
+
+class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     companion object {
         @JvmStatic
         fun registerWith(registrar: Registrar) {
-            val channel = MethodChannel(registrar.messenger(), "plugins.ko2ic.com/image_downloader")
             val activity = registrar.activity() ?: return
-
-            val listener = ImageDownloaderPermissionListener(activity)
-            registrar.addRequestPermissionsResultListener(listener)
-            channel.setMethodCallHandler(ImageDownloaderPlugin(registrar, channel, listener))
+            val context = registrar.context() ?: return
+            val applicationContext = context.applicationContext
+            val pluginInstance = ImageDownloaderPlugin()
+            pluginInstance.setup(registrar.messenger(), applicationContext, activity, registrar, null)
         }
 
+        private const val CHANNEL = "plugins.ko2ic.com/image_downloader"
         private const val LOGGER_TAG = "image_downloader"
+    }
+
+    private lateinit var channel: MethodChannel
+    private lateinit var permissionListener: ImageDownloaderPermissionListener
+    private lateinit var application: Context
+
+    private lateinit var pluginBinding: FlutterPlugin.FlutterPluginBinding
+    private lateinit var activityBinding: ActivityPluginBinding
+    private lateinit var activity: Activity
+
+    override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        pluginBinding = binding
+    }
+
+    override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        tearDown()
+    }
+
+    override fun onAttachedToActivity(activityPluginBinding: ActivityPluginBinding) {
+        activityBinding = activityPluginBinding
+        setup(
+            pluginBinding.binaryMessenger,
+            pluginBinding.applicationContext,
+            activityBinding.activity,
+            null,
+            activityBinding
+        )
+    }
+
+    override fun onDetachedFromActivity() {
+        tearDown()
+    }
+
+    override fun onDetachedFromActivityForConfigChanges() {
+        onDetachedFromActivity()
+    }
+
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        onAttachedToActivity(binding)
+    }
+
+    private fun setup(
+        messenger: BinaryMessenger,
+        applicationContext: Context,
+        activity: Activity,
+        registrar: Registrar?,
+        activityBinding: ActivityPluginBinding?
+    ) {
+        this.activity = activity
+        this.application = applicationContext
+        channel = MethodChannel(messenger, CHANNEL)
+        channel.setMethodCallHandler(this)
+        val listener = ImageDownloaderPermissionListener(activity)
+
+        if (registrar != null) {
+            // V1 embedding setup for activity listeners.
+            registrar.addRequestPermissionsResultListener(listener)
+        } else {
+            // V2 embedding setup for activity listeners.
+            activityBinding?.addRequestPermissionsResultListener(listener)
+        }
+    }
+
+    private fun tearDown() {
+        channel.setMethodCallHandler(null)
     }
 
     private var inPublicDir: Boolean = true
 
     private var callback: CallbackImpl? = null
 
-    override fun onMethodCall(call: MethodCall, result: Result) {
+    override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             "downloadImage" -> {
                 inPublicDir = call.argument<Boolean>("inPublicDir") ?: true
 
-                val permissionCallback = CallbackImpl(call, result, channel, registrar.context())
+                val permissionCallback =
+                    CallbackImpl(call, result, channel, application)
                 this.callback = permissionCallback
                 if (inPublicDir) {
                     this.permissionListener.callback = permissionCallback
@@ -79,32 +147,32 @@ class ImageDownloaderPlugin(
             "findPath" -> {
                 val imageId = call.argument<String>("imageId")
                         ?: throw IllegalArgumentException("imageId is required.")
-                val filePath = findPath(imageId, registrar.context())
+                val filePath = findPath(imageId, application)
                 result.success(filePath)
             }
             "findName" -> {
                 val imageId = call.argument<String>("imageId")
                         ?: throw IllegalArgumentException("imageId is required.")
-                val fileName = findName(imageId, registrar.context())
+                val fileName = findName(imageId, application)
                 result.success(fileName)
             }
             "findByteSize" -> {
                 val imageId = call.argument<String>("imageId")
                         ?: throw IllegalArgumentException("imageId is required.")
-                val fileSize = findByteSize(imageId, registrar.context())
+                val fileSize = findByteSize(imageId, application)
                 result.success(fileSize)
             }
             "findMimeType" -> {
                 val imageId = call.argument<String>("imageId")
                         ?: throw IllegalArgumentException("imageId is required.")
-                val mimeType = findMimeType(imageId, registrar.context())
+                val mimeType = findMimeType(imageId, application)
                 result.success(mimeType)
             }
             else -> result.notImplemented()
         }
     }
 
-    private fun open(call: MethodCall, result: Result) {
+    private fun open(call: MethodCall, result: MethodChannel.Result) {
 
         val path = call.argument<String>("path")
                 ?: throw IllegalArgumentException("path is required.")
@@ -115,9 +183,8 @@ class ImageDownloaderPlugin(
         val fileExtension = MimeTypeMap.getFileExtensionFromUrl(file.path)
         val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension)
 
-        val context = registrar.context()
         if (Build.VERSION.SDK_INT >= 24) {
-            val uri = FileProvider.getUriForFile(context, "${context.packageName}.image_downloader.provider", file)
+            val uri = FileProvider.getUriForFile(application, "${application.packageName}.image_downloader.provider", file)
             intent.setDataAndType(uri, mimeType)
         } else {
             intent.setDataAndType(Uri.fromFile(file), mimeType)
@@ -126,11 +193,11 @@ class ImageDownloaderPlugin(
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
 
-        val manager = context.packageManager
+        val manager = application.packageManager
         if (manager.queryIntentActivities(intent, 0).size == 0) {
             result.error("preview_error", "This file is not supported for previewing", null)
         } else {
-            context.startActivity(intent)
+            application.startActivity(intent)
         }
 
     }
@@ -199,7 +266,7 @@ class ImageDownloaderPlugin(
 
     class CallbackImpl(
             private val call: MethodCall,
-            private val result: Result,
+            private val result: MethodChannel.Result,
             private val channel: MethodChannel,
             private val context: Context
     ) :
