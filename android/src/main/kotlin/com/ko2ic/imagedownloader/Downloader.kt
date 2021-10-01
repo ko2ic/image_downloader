@@ -36,17 +36,14 @@ class Downloader(private val context: Context, private val request: Request) {
         }
         context.registerReceiver(receiver, IntentFilter(ACTION_DOWNLOAD_COMPLETE))
         downloadId = manager.enqueue(request)
-
-        val downloadId = this.downloadId
-
-        if (downloadId != null) {
-            Thread(Runnable {
+        downloadId?.let { nullableDownloadId ->
+            Thread {
                 var downloading = true
 
                 while (downloading) {
 
                     val q = Query()
-                    q.setFilterById(downloadId)
+                    q.setFilterById(nullableDownloadId)
 
                     val cursor = manager.query(q)
                     cursor.moveToFirst()
@@ -76,18 +73,23 @@ class Downloader(private val context: Context, private val request: Request) {
                         BigDecimal(100)
                     ).setScale(0, RoundingMode.DOWN)
 
-                    onNext(DownloadStatus.Running(createRequestResult(downloadId, cursor), progress.toInt()))
+                    onNext(
+                        DownloadStatus.Running(
+                            createRequestResult(nullableDownloadId, cursor),
+                            progress.toInt()
+                        )
+                    )
 
                     cursor.close()
                     Thread.sleep(200)
                 }
-            }).start()
+            }.start()
         }
     }
 
     fun cancel() {
-        if (downloadId != null) {
-            manager.remove(downloadId!!)
+        downloadId?.let {
+            manager.remove(it)
         }
 
         receiver?.let {
@@ -137,7 +139,10 @@ class Downloader(private val context: Context, private val request: Request) {
                             "ERROR_INSUFFICIENT_SPACE",
                             "There was insufficient storage space."
                         )
-                        ERROR_TOO_MANY_REDIRECTS -> Pair("ERROR_TOO_MANY_REDIRECTS", "There were too many redirects.")
+                        ERROR_TOO_MANY_REDIRECTS -> Pair(
+                            "ERROR_TOO_MANY_REDIRECTS",
+                            "There were too many redirects."
+                        )
                         ERROR_UNHANDLED_HTTP_CODE -> Pair(
                             "ERROR_UNHANDLED_HTTP_CODE",
                             "An HTTP code was received that download manager can't handle."

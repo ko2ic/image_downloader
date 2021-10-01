@@ -35,7 +35,6 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 
-
 class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     companion object {
         @JvmStatic
@@ -44,7 +43,13 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             val context = registrar.context() ?: return
             val applicationContext = context.applicationContext
             val pluginInstance = ImageDownloaderPlugin()
-            pluginInstance.setup(registrar.messenger(), applicationContext, activity, registrar, null)
+            pluginInstance.setup(
+                registrar.messenger(),
+                applicationContext,
+                activity,
+                registrar,
+                null
+            )
         }
 
         private const val CHANNEL = "plugins.ko2ic.com/image_downloader"
@@ -53,11 +58,10 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
 
     private lateinit var channel: MethodChannel
     private lateinit var permissionListener: ImageDownloaderPermissionListener
-    private lateinit var applicationContext: Context
-
     private lateinit var pluginBinding: FlutterPlugin.FlutterPluginBinding
-    private lateinit var activityBinding: ActivityPluginBinding
-    private lateinit var activity: Activity
+
+    private var activityBinding: ActivityPluginBinding? = null
+    private var applicationContext: Context? = null
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         pluginBinding = binding
@@ -68,13 +72,12 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     }
 
     override fun onAttachedToActivity(activityPluginBinding: ActivityPluginBinding) {
-        activityBinding = activityPluginBinding
         setup(
             pluginBinding.binaryMessenger,
             pluginBinding.applicationContext,
-            activityBinding.activity,
+            activityPluginBinding.activity,
             null,
-            activityBinding
+            activityPluginBinding
         )
     }
 
@@ -97,7 +100,6 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         registrar: Registrar?,
         activityBinding: ActivityPluginBinding?
     ) {
-        this.activity = activity
         this.applicationContext = applicationContext
         channel = MethodChannel(messenger, CHANNEL)
         channel.setMethodCallHandler(this)
@@ -108,12 +110,15 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             registrar.addRequestPermissionsResultListener(permissionListener)
         } else {
             // V2 embedding setup for activity listeners.
-            activityBinding?.addRequestPermissionsResultListener(permissionListener)
+            this.activityBinding = activityBinding
+            this.activityBinding?.addRequestPermissionsResultListener(permissionListener)
         }
     }
 
     private fun tearDown() {
+        activityBinding?.removeRequestPermissionsResultListener(permissionListener)
         channel.setMethodCallHandler(null)
+        applicationContext = null
     }
 
     private var inPublicDir: Boolean = true
@@ -126,15 +131,15 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 inPublicDir = call.argument<Boolean>("inPublicDir") ?: true
 
                 val permissionCallback =
-                    CallbackImpl(call, result, channel, applicationContext)
+                    applicationContext?.let { CallbackImpl(call, result, channel, it) }
                 this.callback = permissionCallback
                 if (inPublicDir) {
                     this.permissionListener.callback = permissionCallback
                     if (permissionListener.alreadyGranted()) {
-                        permissionCallback.granted()
+                        permissionCallback?.granted()
                     }
                 } else {
-                    permissionCallback.granted()
+                    permissionCallback?.granted()
                 }
             }
             "cancel" -> {
@@ -146,26 +151,26 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
 
             "findPath" -> {
                 val imageId = call.argument<String>("imageId")
-                        ?: throw IllegalArgumentException("imageId is required.")
-                val filePath = findPath(imageId, applicationContext)
+                    ?: throw IllegalArgumentException("imageId is required.")
+                val filePath = applicationContext?.let { findPath(imageId, it) }
                 result.success(filePath)
             }
             "findName" -> {
                 val imageId = call.argument<String>("imageId")
-                        ?: throw IllegalArgumentException("imageId is required.")
-                val fileName = findName(imageId, applicationContext)
+                    ?: throw IllegalArgumentException("imageId is required.")
+                val fileName = applicationContext?.let { findName(imageId, it) }
                 result.success(fileName)
             }
             "findByteSize" -> {
                 val imageId = call.argument<String>("imageId")
-                        ?: throw IllegalArgumentException("imageId is required.")
-                val fileSize = findByteSize(imageId, applicationContext)
+                    ?: throw IllegalArgumentException("imageId is required.")
+                val fileSize = applicationContext?.let { findByteSize(imageId, it) }
                 result.success(fileSize)
             }
             "findMimeType" -> {
                 val imageId = call.argument<String>("imageId")
-                        ?: throw IllegalArgumentException("imageId is required.")
-                val mimeType = findMimeType(imageId, applicationContext)
+                    ?: throw IllegalArgumentException("imageId is required.")
+                val mimeType = applicationContext?.let { findMimeType(imageId, it) }
                 result.success(mimeType)
             }
             else -> result.notImplemented()
@@ -175,7 +180,7 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     private fun open(call: MethodCall, result: MethodChannel.Result) {
 
         val path = call.argument<String>("path")
-                ?: throw IllegalArgumentException("path is required.")
+            ?: throw IllegalArgumentException("path is required.")
 
         val file = File(path)
         val intent = Intent(Intent.ACTION_VIEW)
@@ -184,7 +189,13 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension)
 
         if (Build.VERSION.SDK_INT >= 24) {
-            val uri = FileProvider.getUriForFile(applicationContext, "${applicationContext.packageName}.image_downloader.provider", file)
+            val uri = applicationContext?.let {
+                FileProvider.getUriForFile(
+                    it,
+                    "${applicationContext?.packageName}.image_downloader.provider",
+                    file
+                )
+            }
             intent.setDataAndType(uri, mimeType)
         } else {
             intent.setDataAndType(Uri.fromFile(file), mimeType)
@@ -193,11 +204,13 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
 
-        val manager = applicationContext.packageManager
-        if (manager.queryIntentActivities(intent, 0).size == 0) {
-            result.error("preview_error", "This file is not supported for previewing", null)
-        } else {
-            applicationContext.startActivity(intent)
+        val manager = applicationContext?.packageManager
+        if (manager != null) {
+            if (manager.queryIntentActivities(intent, 0).size == 0) {
+                result.error("preview_error", "This file is not supported for previewing", null)
+            } else {
+                applicationContext?.startActivity(intent)
+            }
         }
 
     }
@@ -227,11 +240,11 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         if (inPublicDir) {
             val contentResolver = context.contentResolver
             return contentResolver.query(
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                    null,
-                    "${MediaStore.Images.Media._ID}=?",
-                    arrayOf(imageId),
-                    null
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                null,
+                "${MediaStore.Images.Media._ID}=?",
+                arrayOf(imageId),
+                null
             ).use {
                 checkNotNull(it) { "$imageId is an imageId that does not exist." }
                 it.moveToFirst()
@@ -244,39 +257,40 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         } else {
             val db = TemporaryDatabase(context).readableDatabase
             return db.query(
-                    TABLE_NAME,
-                    COLUMNS,
-                    "${MediaStore.Images.Media._ID}=?",
-                    arrayOf(imageId),
-                    null,
-                    null,
-                    null,
-                    null
+                TABLE_NAME,
+                COLUMNS,
+                "${MediaStore.Images.Media._ID}=?",
+                arrayOf(imageId),
+                null,
+                null,
+                null,
+                null
             )
-                    .use {
-                        it.moveToFirst()
-                        val path = it.getString(it.getColumnIndex(MediaStore.Images.Media.DATA))
-                        val name = it.getString(it.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME))
-                        val size = it.getInt(it.getColumnIndex(MediaStore.Images.Media.SIZE))
-                        val mimeType = it.getString(it.getColumnIndex(MediaStore.Images.Media.MIME_TYPE))
-                        FileData(path = path, name = name, byteSize = size, mimeType = mimeType)
-                    }
+                .use {
+                    it.moveToFirst()
+                    val path = it.getString(it.getColumnIndex(MediaStore.Images.Media.DATA))
+                    val name = it.getString(it.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME))
+                    val size = it.getInt(it.getColumnIndex(MediaStore.Images.Media.SIZE))
+                    val mimeType =
+                        it.getString(it.getColumnIndex(MediaStore.Images.Media.MIME_TYPE))
+                    FileData(path = path, name = name, byteSize = size, mimeType = mimeType)
+                }
         }
     }
 
     class CallbackImpl(
-            private val call: MethodCall,
-            private val result: MethodChannel.Result,
-            private val channel: MethodChannel,
-            private val context: Context
+        private val call: MethodCall,
+        private val result: MethodChannel.Result,
+        private val channel: MethodChannel,
+        private val context: Context
     ) :
-            ImageDownloaderPermissionListener.Callback {
+        ImageDownloaderPermissionListener.Callback {
 
         var downloader: Downloader? = null
 
         override fun granted() {
             val url = call.argument<String>("url")
-                    ?: throw IllegalArgumentException("url is required.")
+                ?: throw IllegalArgumentException("url is required.")
 
             val headers: Map<String, String>? = call.argument<Map<String, String>>("headers")
 
@@ -285,8 +299,8 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             val directoryType = call.argument<String>("directory") ?: "DIRECTORY_DOWNLOADS"
             val subDirectory = call.argument<String>("subDirectory")
             val tempSubDirectory = subDirectory ?: SimpleDateFormat(
-                    "yyyy-MM-dd.HH.mm.sss",
-                    Locale.getDefault()
+                "yyyy-MM-dd.HH.mm.sss",
+                Locale.getDefault()
             ).format(Date())
 
             val directory = convertToDirectory(directoryType)
@@ -343,11 +357,15 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 }
 
                 if (!file.exists()) {
-                    result.error("save_error", "Couldn't save ${file.absolutePath ?: tempSubDirectory} ", null)
+                    result.error(
+                        "save_error",
+                        "Couldn't save ${file.absolutePath ?: tempSubDirectory} ",
+                        null
+                    )
                 } else {
                     val stream = BufferedInputStream(FileInputStream(file))
                     val mimeType = outputMimeType
-                            ?: URLConnection.guessContentTypeFromStream(stream)
+                        ?: URLConnection.guessContentTypeFromStream(stream)
 
                     val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
 
@@ -365,8 +383,8 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
 
                     file.renameTo(newFile)
                     val newMimeType = mimeType
-                            ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(newFile.extension)
-                            ?: ""
+                        ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(newFile.extension)
+                        ?: ""
                     val imageId = saveToDatabase(newFile, mimeType ?: newMimeType, inPublicDir)
 
                     result.success(imageId)
@@ -401,15 +419,15 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             if (inPublicDir) {
 
                 context.contentResolver.insert(
-                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                        contentValues
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    contentValues
                 )
                 return context.contentResolver.query(
-                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                        arrayOf(MediaStore.Images.Media._ID, MediaStore.Images.Media.DATA),
-                        "${MediaStore.Images.Media.DATA}=?",
-                        arrayOf(file.absolutePath),
-                        null
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    arrayOf(MediaStore.Images.Media._ID, MediaStore.Images.Media.DATA),
+                    "${MediaStore.Images.Media.DATA}=?",
+                    arrayOf(file.absolutePath),
+                    null
                 ).use {
                     checkNotNull(it) { "${file.absolutePath} is not found." }
                     it.moveToFirst()
@@ -419,8 +437,8 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 val db = TemporaryDatabase(context)
                 val allowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz0123456789"
                 val id = (1..20)
-                        .map { allowedChars.random() }
-                        .joinToString("")
+                    .map { allowedChars.random() }
+                    .joinToString("")
                 contentValues.put(MediaStore.Images.Media._ID, id)
                 db.writableDatabase.insert(TABLE_NAME, null, contentValues)
                 return id
@@ -428,22 +446,27 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         }
     }
 
-    private data class FileData(val path: String, val name: String, val byteSize: Int, val mimeType: String)
+    private data class FileData(
+        val path: String,
+        val name: String,
+        val byteSize: Int,
+        val mimeType: String
+    )
 
     class TemporaryDatabase(context: Context) :
-            SQLiteOpenHelper(context, TABLE_NAME, null, DATABASE_VERSION) {
+        SQLiteOpenHelper(context, TABLE_NAME, null, DATABASE_VERSION) {
 
 
         companion object {
 
             val COLUMNS =
-                    arrayOf(
-                            MediaStore.Images.Media._ID,
-                            MediaStore.Images.Media.MIME_TYPE,
-                            MediaStore.Images.Media.DATA,
-                            MediaStore.Images.ImageColumns.DISPLAY_NAME,
-                            MediaStore.Images.ImageColumns.SIZE
-                    )
+                arrayOf(
+                    MediaStore.Images.Media._ID,
+                    MediaStore.Images.Media.MIME_TYPE,
+                    MediaStore.Images.Media.DATA,
+                    MediaStore.Images.ImageColumns.DISPLAY_NAME,
+                    MediaStore.Images.ImageColumns.SIZE
+                )
 
             private const val DATABASE_VERSION = 1
             const val TABLE_NAME = "image_downloader_temporary"
