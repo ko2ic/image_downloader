@@ -1,3 +1,6 @@
+## 0.31.0
+* Enable to work with V2
+
 ## 0.30.0
 * Migrate to Null Safety
 
