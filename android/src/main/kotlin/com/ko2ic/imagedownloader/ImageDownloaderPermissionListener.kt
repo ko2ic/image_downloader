@@ -15,9 +15,7 @@ class ImageDownloaderPermissionListener(private val activity: Activity) :
     var callback: Callback? = null
 
     override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
+        requestCode: Int, permissions: Array<String>, grantResults: IntArray
     ): Boolean {
 
         if (!isPermissionGranted(permissions)) {
@@ -50,8 +48,11 @@ class ImageDownloaderPermissionListener(private val activity: Activity) :
         return true
     }
 
-    private fun isPermissionGranted(permissions: Array<String>) =
-        permissions.none { ContextCompat.checkSelfPermission(activity, it) != PackageManager.PERMISSION_GRANTED }
+    private fun isPermissionGranted(permissions: Array<String>) = permissions.none {
+        ContextCompat.checkSelfPermission(
+            activity, it
+        ) != PackageManager.PERMISSION_GRANTED
+    }
 
     interface Callback {
         fun granted()

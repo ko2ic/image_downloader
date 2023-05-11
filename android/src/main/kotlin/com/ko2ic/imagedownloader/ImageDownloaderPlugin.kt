@@ -19,14 +19,13 @@ import androidx.core.content.FileProvider
 import com.ko2ic.imagedownloader.ImageDownloaderPlugin.TemporaryDatabase.Companion.COLUMNS
 import com.ko2ic.imagedownloader.ImageDownloaderPlugin.TemporaryDatabase.Companion.TABLE_NAME
 import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.PluginRegistry.Registrar
-import io.flutter.embedding.engine.plugins.activity.ActivityAware;
-import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
-
 import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileInputStream
@@ -34,21 +33,16 @@ import java.net.URLConnection
 import java.text.SimpleDateFormat
 import java.util.*
 
-
 class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     companion object {
         @JvmStatic
         fun registerWith(registrar: Registrar) {
             val activity = registrar.activity() ?: return
-            val context = registrar.context() ?: return
+            val context = registrar.context()
             val applicationContext = context.applicationContext
             val pluginInstance = ImageDownloaderPlugin()
             pluginInstance.setup(
-                registrar.messenger(),
-                applicationContext,
-                activity,
-                registrar,
-                null
+                registrar.messenger(), applicationContext, activity, registrar, null
             )
         }
 
@@ -179,8 +173,8 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
 
     private fun open(call: MethodCall, result: MethodChannel.Result) {
 
-        val path = call.argument<String>("path")
-            ?: throw IllegalArgumentException("path is required.")
+        val path =
+            call.argument<String>("path") ?: throw IllegalArgumentException("path is required.")
 
         val file = File(path)
         val intent = Intent(Intent.ACTION_VIEW)
@@ -191,9 +185,7 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         if (Build.VERSION.SDK_INT >= 24) {
             val uri = applicationContext?.let {
                 FileProvider.getUriForFile(
-                    it,
-                    "${applicationContext?.packageName}.image_downloader.provider",
-                    file
+                    it, "${applicationContext?.packageName}.image_downloader.provider", file
                 )
             }
             intent.setDataAndType(uri, mimeType)
@@ -265,16 +257,14 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 null,
                 null,
                 null
-            )
-                .use {
-                    it.moveToFirst()
-                    val path = it.getString(it.getColumnIndex(MediaStore.Images.Media.DATA))
-                    val name = it.getString(it.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME))
-                    val size = it.getInt(it.getColumnIndex(MediaStore.Images.Media.SIZE))
-                    val mimeType =
-                        it.getString(it.getColumnIndex(MediaStore.Images.Media.MIME_TYPE))
-                    FileData(path = path, name = name, byteSize = size, mimeType = mimeType)
-                }
+            ).use {
+                it.moveToFirst()
+                val path = it.getString(it.getColumnIndex(MediaStore.Images.Media.DATA))
+                val name = it.getString(it.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME))
+                val size = it.getInt(it.getColumnIndex(MediaStore.Images.Media.SIZE))
+                val mimeType = it.getString(it.getColumnIndex(MediaStore.Images.Media.MIME_TYPE))
+                FileData(path = path, name = name, byteSize = size, mimeType = mimeType)
+            }
         }
     }
 
@@ -283,14 +273,13 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         private val result: MethodChannel.Result,
         private val channel: MethodChannel,
         private val context: Context
-    ) :
-        ImageDownloaderPermissionListener.Callback {
+    ) : ImageDownloaderPermissionListener.Callback {
 
         var downloader: Downloader? = null
 
         override fun granted() {
-            val url = call.argument<String>("url")
-                ?: throw IllegalArgumentException("url is required.")
+            val url =
+                call.argument<String>("url") ?: throw IllegalArgumentException("url is required.")
 
             val headers: Map<String, String>? = call.argument<Map<String, String>>("headers")
 
@@ -299,8 +288,7 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             val directoryType = call.argument<String>("directory") ?: "DIRECTORY_DOWNLOADS"
             val subDirectory = call.argument<String>("subDirectory")
             val tempSubDirectory = subDirectory ?: SimpleDateFormat(
-                "yyyy-MM-dd.HH.mm.sss",
-                Locale.getDefault()
+                "yyyy-MM-dd.HH.mm.sss", Locale.getDefault()
             ).format(Date())
 
             val directory = convertToDirectory(directoryType)
@@ -365,8 +353,8 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                     )
                 } else {
                     val stream = BufferedInputStream(FileInputStream(file))
-                    val mimeType = outputMimeType
-                        ?: URLConnection.guessContentTypeFromStream(stream)
+                    val mimeType =
+                        outputMimeType ?: URLConnection.guessContentTypeFromStream(stream)
 
                     val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
 
@@ -383,9 +371,8 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                     }
 
                     file.renameTo(newFile)
-                    val newMimeType = mimeType
-                        ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(newFile.extension)
-                        ?: ""
+                    val newMimeType = mimeType ?: MimeTypeMap.getSingleton()
+                        .getMimeTypeFromExtension(newFile.extension) ?: ""
                     val imageId = saveToDatabase(newFile, mimeType ?: newMimeType, inPublicDir)
 
                     result.success(imageId)
@@ -420,8 +407,7 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             if (inPublicDir) {
 
                 context.contentResolver.insert(
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                    contentValues
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues
                 )
                 return context.contentResolver.query(
                     MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
@@ -437,9 +423,7 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             } else {
                 val db = TemporaryDatabase(context)
                 val allowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz0123456789"
-                val id = (1..20)
-                    .map { allowedChars.random() }
-                    .joinToString("")
+                val id = (1..20).map { allowedChars.random() }.joinToString("")
                 contentValues.put(MediaStore.Images.Media._ID, id)
                 db.writableDatabase.insert(TABLE_NAME, null, contentValues)
                 return id
@@ -448,10 +432,7 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     }
 
     private data class FileData(
-        val path: String,
-        val name: String,
-        val byteSize: Int,
-        val mimeType: String
+        val path: String, val name: String, val byteSize: Int, val mimeType: String
     )
 
     class TemporaryDatabase(context: Context) :
@@ -460,24 +441,18 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
 
         companion object {
 
-            val COLUMNS =
-                arrayOf(
-                    MediaStore.Images.Media._ID,
-                    MediaStore.Images.Media.MIME_TYPE,
-                    MediaStore.Images.Media.DATA,
-                    MediaStore.Images.ImageColumns.DISPLAY_NAME,
-                    MediaStore.Images.ImageColumns.SIZE
-                )
+            val COLUMNS = arrayOf(
+                MediaStore.Images.Media._ID,
+                MediaStore.Images.Media.MIME_TYPE,
+                MediaStore.Images.Media.DATA,
+                MediaStore.Images.ImageColumns.DISPLAY_NAME,
+                MediaStore.Images.ImageColumns.SIZE
+            )
 
             private const val DATABASE_VERSION = 1
             const val TABLE_NAME = "image_downloader_temporary"
-            private const val DICTIONARY_TABLE_CREATE = "CREATE TABLE " + TABLE_NAME + " (" +
-                    MediaStore.Images.Media._ID + " TEXT, " +
-                    MediaStore.Images.Media.MIME_TYPE + " TEXT, " +
-                    MediaStore.Images.Media.DATA + " TEXT, " +
-                    MediaStore.Images.ImageColumns.DISPLAY_NAME + " TEXT, " +
-                    MediaStore.Images.ImageColumns.SIZE + " INTEGER" +
-                    ");"
+            private const val DICTIONARY_TABLE_CREATE =
+                "CREATE TABLE " + TABLE_NAME + " (" + MediaStore.Images.Media._ID + " TEXT, " + MediaStore.Images.Media.MIME_TYPE + " TEXT, " + MediaStore.Images.Media.DATA + " TEXT, " + MediaStore.Images.ImageColumns.DISPLAY_NAME + " TEXT, " + MediaStore.Images.ImageColumns.SIZE + " INTEGER" + ");"
         }
 
         override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
