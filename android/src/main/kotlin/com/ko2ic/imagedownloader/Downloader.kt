@@ -10,7 +10,6 @@ import android.database.Cursor
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-
 class Downloader(private val context: Context, private val request: Request) {
 
     private val manager: DownloadManager =
@@ -75,8 +74,7 @@ class Downloader(private val context: Context, private val request: Request) {
 
                     onNext(
                         DownloadStatus.Running(
-                            createRequestResult(nullableDownloadId, cursor),
-                            progress.toInt()
+                            createRequestResult(nullableDownloadId, cursor), progress.toInt()
                         )
                     )
 
@@ -120,8 +118,7 @@ class Downloader(private val context: Context, private val request: Request) {
                             "Some possibly transient error occurred but we can't resume the download."
                         )
                         ERROR_DEVICE_NOT_FOUND -> Pair(
-                            "ERROR_DEVICE_NOT_FOUND",
-                            "No external storage device was found."
+                            "ERROR_DEVICE_NOT_FOUND", "No external storage device was found."
                         )
                         ERROR_FILE_ALREADY_EXISTS -> Pair(
                             "ERROR_FILE_ALREADY_EXISTS",
@@ -136,12 +133,10 @@ class Downloader(private val context: Context, private val request: Request) {
                             "An error receiving or processing data occurred at the HTTP level."
                         )
                         ERROR_INSUFFICIENT_SPACE -> Pair(
-                            "ERROR_INSUFFICIENT_SPACE",
-                            "There was insufficient storage space."
+                            "ERROR_INSUFFICIENT_SPACE", "There was insufficient storage space."
                         )
                         ERROR_TOO_MANY_REDIRECTS -> Pair(
-                            "ERROR_TOO_MANY_REDIRECTS",
-                            "There were too many redirects."
+                            "ERROR_TOO_MANY_REDIRECTS", "There were too many redirects."
                         )
                         ERROR_UNHANDLED_HTTP_CODE -> Pair(
                             "ERROR_UNHANDLED_HTTP_CODE",
@@ -183,16 +178,15 @@ class Downloader(private val context: Context, private val request: Request) {
         cursor.close()
     }
 
-    private fun createRequestResult(id: Long, cursor: Cursor): RequestResult =
-        RequestResult(
-            id = id,
-            remoteUri = cursor.getString(cursor.getColumnIndex(COLUMN_URI)),
-            localUri = cursor.getString(cursor.getColumnIndex(COLUMN_LOCAL_URI)),
-            mediaType = cursor.getString(cursor.getColumnIndex(COLUMN_MEDIA_TYPE)),
-            totalSize = cursor.getInt(cursor.getColumnIndex(COLUMN_TOTAL_SIZE_BYTES)),
-            title = cursor.getString(cursor.getColumnIndex(COLUMN_TITLE)),
-            description = cursor.getString(cursor.getColumnIndex(COLUMN_DESCRIPTION))
-        )
+    private fun createRequestResult(id: Long, cursor: Cursor): RequestResult = RequestResult(
+        id = id,
+        remoteUri = cursor.getString(cursor.getColumnIndex(COLUMN_URI)),
+        localUri = cursor.getString(cursor.getColumnIndex(COLUMN_LOCAL_URI)),
+        mediaType = cursor.getString(cursor.getColumnIndex(COLUMN_MEDIA_TYPE)),
+        totalSize = cursor.getInt(cursor.getColumnIndex(COLUMN_TOTAL_SIZE_BYTES)),
+        title = cursor.getString(cursor.getColumnIndex(COLUMN_TITLE)),
+        description = cursor.getString(cursor.getColumnIndex(COLUMN_DESCRIPTION))
+    )
 
     sealed class DownloadStatus(val result: RequestResult) {
         class Successful(result: RequestResult) : DownloadStatus(result)

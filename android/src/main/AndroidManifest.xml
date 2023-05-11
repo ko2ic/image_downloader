@@ -1,3 +1,1 @@
-<manifest
-        package="com.ko2ic.imagedownloader">
-</manifest>
+<manifest package="com.ko2ic.imagedownloader" />
