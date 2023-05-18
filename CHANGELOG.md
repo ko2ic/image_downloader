@@ -1,3 +1,6 @@
+## 0.32.0
+* Compatibility with Kotlin 1.7
+
 ## 0.31.0
 * Enable to work with V2
 
