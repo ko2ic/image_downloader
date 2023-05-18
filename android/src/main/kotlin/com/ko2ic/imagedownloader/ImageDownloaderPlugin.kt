@@ -1,5 +1,6 @@
 package com.ko2ic.imagedownloader
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.DownloadManager
 import android.content.ContentValues
@@ -227,6 +228,7 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         return data.mimeType
     }
 
+    @SuppressLint("Range")
     private fun findFileData(imageId: String, context: Context): FileData {
 
         if (inPublicDir) {
@@ -394,6 +396,7 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             }
         }
 
+        @SuppressLint("Range")
         private fun saveToDatabase(file: File, mimeType: String, inPublicDir: Boolean): String {
             val path = file.absolutePath
             val name = file.name

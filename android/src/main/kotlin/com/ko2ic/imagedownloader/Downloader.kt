@@ -1,5 +1,6 @@
 package com.ko2ic.imagedownloader
 
+import android.annotation.SuppressLint
 import android.app.DownloadManager
 import android.app.DownloadManager.*
 import android.content.BroadcastReceiver
@@ -19,6 +20,7 @@ class Downloader(private val context: Context, private val request: Request) {
 
     private var downloadId: Long? = null
 
+    @SuppressLint("Range")
     fun execute(
         onNext: (DownloadStatus) -> Unit,
         onError: (DownloadFailedException) -> Unit,
@@ -96,6 +98,7 @@ class Downloader(private val context: Context, private val request: Request) {
         }
     }
 
+    @SuppressLint("Range")
     private fun resolveDownloadStatus(
         id: Long,
         onNext: (DownloadStatus) -> Unit,
@@ -178,6 +181,7 @@ class Downloader(private val context: Context, private val request: Request) {
         cursor.close()
     }
 
+    @SuppressLint("Range")
     private fun createRequestResult(id: Long, cursor: Cursor): RequestResult = RequestResult(
         id = id,
         remoteUri = cursor.getString(cursor.getColumnIndex(COLUMN_URI)),
