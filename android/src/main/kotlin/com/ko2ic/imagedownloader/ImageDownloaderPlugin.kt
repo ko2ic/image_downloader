@@ -334,6 +334,14 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                             channel.invokeMethod("onProgressUpdate", args)
                         }
                     }
+                    is Downloader.DownloadStatus.Successful -> {
+                        val args = HashMap<String, Any>()
+                        args["image_id"] = it.result.id.toString()
+                        val uiThreadHandler = Handler(Looper.getMainLooper())
+                        uiThreadHandler.post {
+                            channel.invokeMethod("onDownloadComplete", args)
+                        }
+                    }
                     else -> throw AssertionError()
                 }
 

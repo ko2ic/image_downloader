@@ -91,7 +91,7 @@
 ## 0.13.4
 
 * Fix crash when MimeType cannot be determined.   
-(It could not be retrieved from the file name due to a simple mistake)
+  (It could not be retrieved from the file name due to a simple mistake)
 
 ## 0.13.3
 
@@ -107,17 +107,17 @@
 
 ## 0.13.0
 
-* Returned as code of PlatformException in case of Http Status Code error.(e.g. 404) 
+* Returned as code of PlatformException in case of Http Status Code error.(e.g. 404)
 * Delete remaining files in case of errors on Android.
 
 ## 0.12.1
 
-* Fix to returns when not been granted permission on Android. 
+* Fix to returns when not been granted permission on Android.
 * Fix Kotlin's warning.
 
-## 0.12.0 
+## 0.12.0
 
-* Be able to specify the destination in external storage on Android. 
+* Be able to specify the destination in external storage on Android.
 
 ## 0.11.2+1
 
@@ -133,7 +133,7 @@
 
 ## 0.11.0
 
-* **Breaking change**. Changed the return value from bool to imageId. 
+* **Breaking change**. Changed the return value from bool to imageId.
   You can acquire saved image information by using imageId.
 * Added findName, findPath, findByteSize, findMimeType.
 
