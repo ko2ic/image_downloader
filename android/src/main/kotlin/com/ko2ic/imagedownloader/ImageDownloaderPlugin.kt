@@ -3,9 +3,11 @@ package com.ko2ic.imagedownloader
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.DownloadManager
+import android.content.ContentResolver.MimeTypeInfo
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.net.Uri
@@ -147,25 +149,29 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             "findPath" -> {
                 val imageId = call.argument<String>("imageId")
                     ?: throw IllegalArgumentException("imageId is required.")
-                val filePath = applicationContext?.let { findPath(imageId, it) }
+                val isVideo = call.argument<Boolean>("isVideo")
+                val filePath = applicationContext?.let { findPath(imageId, it, isVideo) }
                 result.success(filePath)
             }
             "findName" -> {
                 val imageId = call.argument<String>("imageId")
                     ?: throw IllegalArgumentException("imageId is required.")
-                val fileName = applicationContext?.let { findName(imageId, it) }
+                val isVideo = call.argument<Boolean>("isVideo")
+                val fileName = applicationContext?.let { findName(imageId, it, isVideo) }
                 result.success(fileName)
             }
             "findByteSize" -> {
                 val imageId = call.argument<String>("imageId")
                     ?: throw IllegalArgumentException("imageId is required.")
-                val fileSize = applicationContext?.let { findByteSize(imageId, it) }
+                val isVideo = call.argument<Boolean>("isVideo")
+                val fileSize = applicationContext?.let { findByteSize(imageId, it, isVideo) }
                 result.success(fileSize)
             }
             "findMimeType" -> {
                 val imageId = call.argument<String>("imageId")
                     ?: throw IllegalArgumentException("imageId is required.")
-                val mimeType = applicationContext?.let { findMimeType(imageId, it) }
+                val isVideo = call.argument<Boolean>("isVideo")
+                val mimeType = applicationContext?.let { findMimeType(imageId, it, isVideo) }
                 result.success(mimeType)
             }
             else -> result.notImplemented()
@@ -199,61 +205,78 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
 
         val manager = applicationContext?.packageManager
         if (manager != null) {
-            if (manager.queryIntentActivities(intent, 0).size == 0) {
-                result.error("preview_error", "This file is not supported for previewing", null)
+            val existsPreviewableApp = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                manager.queryIntentActivities(intent, PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY.toLong())).size > 0
             } else {
+                manager.queryIntentActivities(intent, 0).size > 0
+            }
+            if (existsPreviewableApp) {
                 applicationContext?.startActivity(intent)
+            } else {
+                result.error("preview_error", "This file is not supported for previewing", null)
             }
         }
 
     }
 
-    private fun findPath(imageId: String, context: Context): String {
-        val data = findFileData(imageId, context)
+    private fun findPath(imageId: String, context: Context, isVideo: Boolean?): String {
+        val data = findFileData(imageId, context, isVideo)
         return data.path
     }
 
-    private fun findName(imageId: String, context: Context): String {
-        val data = findFileData(imageId, context)
+    private fun findName(imageId: String, context: Context, isVideo: Boolean?): String {
+        val data = findFileData(imageId, context, isVideo)
         return data.name
     }
 
-    private fun findByteSize(imageId: String, context: Context): Int {
-        val data = findFileData(imageId, context)
+    private fun findByteSize(imageId: String, context: Context, isVideo: Boolean?): Int {
+        val data = findFileData(imageId, context, isVideo)
         return data.byteSize
     }
 
-    private fun findMimeType(imageId: String, context: Context): String {
-        val data = findFileData(imageId, context)
+    private fun findMimeType(imageId: String, context: Context, isVideo: Boolean?): String {
+        val data = findFileData(imageId, context, isVideo)
         return data.mimeType
     }
 
-    @SuppressLint("Range")
-    private fun findFileData(imageId: String, context: Context): FileData {
+    private fun findFileData(imageId: String, context: Context, isVideo: Boolean?): FileData {
+        if (isVideo != null) {
+            val keys = ContentValueKeys(isVideo)
+            return findFileData(imageId, context, keys)
+        }
+        return try {
+            findFileData(imageId, context, ContentValueKeys(false))
+        } catch (e: IllegalStateException) {
+            findFileData(imageId, context, ContentValueKeys(true))
+        }
+    }
 
+    @SuppressLint("Range")
+    private fun findFileData(imageId: String, context: Context, keys: ContentValueKeys): FileData {
         if (inPublicDir) {
             val contentResolver = context.contentResolver
             return contentResolver.query(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                null,
-                "${MediaStore.Images.Media._ID}=?",
-                arrayOf(imageId),
-                null
-            ).use {
-                checkNotNull(it) { "$imageId is an imageId that does not exist." }
-                it.moveToFirst()
-                val path = it.getString(it.getColumnIndex(MediaStore.Images.Media.DATA))
-                val name = it.getString(it.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME))
-                val size = it.getInt(it.getColumnIndex(MediaStore.Images.Media.SIZE))
-                val mimeType = it.getString(it.getColumnIndex(MediaStore.Images.Media.MIME_TYPE))
-                FileData(path = path, name = name, byteSize = size, mimeType = mimeType)
-            }
+                    keys.externalContentUri,
+                    null,
+                    "${keys.id}=?",
+                    arrayOf(imageId),
+                    null
+                ).use {
+                    checkNotNull(it) { "$imageId is an ${if (keys.isVideo) "videoId" else "imageId"} that does not exist." }
+                    check(it.count > 0) { "$imageId is an ${if (keys.isVideo) "videoId" else "imageId"} that does not exist." }
+                    it.moveToFirst()
+                    val path = it.getString(it.getColumnIndex(keys.data))
+                    val name = it.getString(it.getColumnIndex(keys.displayName))
+                    val size = it.getInt(it.getColumnIndex(keys.size))
+                    val mimeType = it.getString(it.getColumnIndex(keys.mimeType))
+                    FileData(path = path, name = name, byteSize = size, mimeType = mimeType)
+                }
         } else {
             val db = TemporaryDatabase(context).readableDatabase
             return db.query(
                 TABLE_NAME,
                 COLUMNS,
-                "${MediaStore.Images.Media._ID}=?",
+                "${keys.id}=?",
                 arrayOf(imageId),
                 null,
                 null,
@@ -261,10 +284,10 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 null
             ).use {
                 it.moveToFirst()
-                val path = it.getString(it.getColumnIndex(MediaStore.Images.Media.DATA))
-                val name = it.getString(it.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME))
-                val size = it.getInt(it.getColumnIndex(MediaStore.Images.Media.SIZE))
-                val mimeType = it.getString(it.getColumnIndex(MediaStore.Images.Media.MIME_TYPE))
+                val path = it.getString(it.getColumnIndex(keys.data))
+                val name = it.getString(it.getColumnIndex(keys.displayName))
+                val size = it.getInt(it.getColumnIndex(keys.size))
+                val mimeType = it.getString(it.getColumnIndex(keys.mimeType))
                 FileData(path = path, name = name, byteSize = size, mimeType = mimeType)
             }
         }
@@ -385,6 +408,8 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                         .getMimeTypeFromExtension(newFile.extension) ?: ""
                     val imageId = saveToDatabase(newFile, mimeType ?: newMimeType, inPublicDir)
 
+                    Log.d("ImageId", "image id: $imageId")
+
                     result.success(imageId)
                 }
             })
@@ -409,36 +434,77 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             val path = file.absolutePath
             val name = file.name
             val size = file.length()
+            val isVideo = mimeType.startsWith("video")
 
             val contentValues = ContentValues()
-            contentValues.put(MediaStore.Images.Media.MIME_TYPE, mimeType)
-            contentValues.put(MediaStore.Images.Media.DATA, path)
-            contentValues.put(MediaStore.Images.ImageColumns.DISPLAY_NAME, name)
-            contentValues.put(MediaStore.Images.ImageColumns.SIZE, size)
-            if (inPublicDir) {
+            val keys = ContentValueKeys(isVideo)
 
+            contentValues.put(keys.mimeType, mimeType)
+            contentValues.put(keys.data, path)
+            contentValues.put(keys.displayName, name)
+            contentValues.put(keys.size, size)
+
+            if (inPublicDir) {
                 context.contentResolver.insert(
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues
+                    keys.externalContentUri, contentValues
                 )
                 return context.contentResolver.query(
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                    arrayOf(MediaStore.Images.Media._ID, MediaStore.Images.Media.DATA),
-                    "${MediaStore.Images.Media.DATA}=?",
+                    keys.externalContentUri,
+                    arrayOf(keys.id, keys.data),
+                    "${keys.data}=?",
                     arrayOf(file.absolutePath),
                     null
                 ).use {
                     checkNotNull(it) { "${file.absolutePath} is not found." }
                     it.moveToFirst()
-                    it.getString(it.getColumnIndex(MediaStore.Images.Media._ID))
+                    it.getString(it.getColumnIndex(keys.id))
                 }
             } else {
                 val db = TemporaryDatabase(context)
                 val allowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz0123456789"
                 val id = (1..20).map { allowedChars.random() }.joinToString("")
-                contentValues.put(MediaStore.Images.Media._ID, id)
+                contentValues.put(keys.id, id)
                 db.writableDatabase.insert(TABLE_NAME, null, contentValues)
                 return id
             }
+        }
+    }
+
+    private data class ContentValueKeys(val isVideo: Boolean) {
+        val id = if (isVideo) {
+            MediaStore.Video.Media._ID
+        } else {
+            MediaStore.Images.Media._ID
+        }
+
+        val mimeType = if (isVideo) {
+            MediaStore.Video.Media.MIME_TYPE
+        } else {
+            MediaStore.Images.Media.MIME_TYPE
+        }
+
+        val data = if (isVideo) {
+            MediaStore.Video.Media.DATA
+        } else {
+            MediaStore.Images.Media.DATA
+        }
+
+        val displayName = if (isVideo) {
+            MediaStore.Video.VideoColumns.DISPLAY_NAME
+        } else {
+            MediaStore.Images.ImageColumns.DISPLAY_NAME
+        }
+
+        val size = if (isVideo) {
+            MediaStore.Video.VideoColumns.SIZE
+        } else {
+            MediaStore.Images.ImageColumns.SIZE
+        }
+
+        val externalContentUri =  if (isVideo) {
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        } else {
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         }
     }
 

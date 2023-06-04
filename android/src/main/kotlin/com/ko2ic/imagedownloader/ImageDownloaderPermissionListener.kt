@@ -20,7 +20,7 @@ class ImageDownloaderPermissionListener(private val activity: Activity) :
         private val STORAGE_PERMISSIONS = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE)
 
         @TargetApi(Build.VERSION_CODES.TIRAMISU)
-        private val STORAGE_PERMISSIONS_TIRAMISU = arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
+        private val STORAGE_PERMISSIONS_TIRAMISU = arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO)
     }
 
     override fun onRequestPermissionsResult(
