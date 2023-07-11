@@ -334,7 +334,7 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                             channel.invokeMethod("onProgressUpdate", args)
                         }
                     }
-                    else -> throw AssertionError()
+                    else -> throw AssertionError();
                 }
 
             }, onError = {
