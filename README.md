@@ -14,9 +14,14 @@ Add the following keys to your Info.plist file, located in <project root>/ios/Ru
 
 ### Android
 
-Add this permission in ```AndroidManifest.xml```. (If you call ```AndroidDestinationType#inExternalFilesDir()```, This setting is not necessary.)
+Add these permissions in ```AndroidManifest.xml```. 
 
 ```xml
+<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+<uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+<uses-permission android:name="android.permission.INTERNET" />
+
+<!-- If your application only targets API level 33 and above, this is not necessary -->
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 ```
 

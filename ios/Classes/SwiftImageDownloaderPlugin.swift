@@ -81,7 +81,8 @@ public class SwiftImageDownloaderPlugin: NSObject, FlutterPlugin {
     }
 
     private func setData(_ call: FlutterMethodCall, result: @escaping FlutterResult, completion: (String) -> Void) {
-        guard let imageId = (call.arguments as? Dictionary<String, String>)?["imageId"] else {
+        guard let args = call.arguments as? Dictionary<String, Any>,
+            let imageId = args["imageId"] as? String else {
             result(FlutterError(code: "assertion_error", message: "imageId is required.", details: nil))
             return
         }

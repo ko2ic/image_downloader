@@ -1,8 +1,10 @@
 package com.ko2ic.imagedownloader
 
 import android.Manifest
+import android.annotation.TargetApi
 import android.app.Activity
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import io.flutter.plugin.common.PluginRegistry
@@ -13,6 +15,13 @@ class ImageDownloaderPermissionListener(private val activity: Activity) :
     private val permissionRequestId: Int = 2578166
 
     var callback: Callback? = null
+
+    companion object {
+        private val STORAGE_PERMISSIONS = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+
+        @TargetApi(Build.VERSION_CODES.TIRAMISU)
+        private val STORAGE_PERMISSIONS_TIRAMISU = arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO)
+    }
 
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<String>, grantResults: IntArray
@@ -37,7 +46,11 @@ class ImageDownloaderPermissionListener(private val activity: Activity) :
     }
 
     fun alreadyGranted(): Boolean {
-        val permissions = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            STORAGE_PERMISSIONS_TIRAMISU
+        } else {
+            STORAGE_PERMISSIONS
+        }
 
         if (!isPermissionGranted(permissions)) {
             // Request authorization. User is not yet authorized.
