@@ -61,23 +61,27 @@ class ImageDownloader {
   }
 
   /// Acquire the saved image name.
-  static Future<String?> findName(String imageId) async {
-    return _channel.invokeMethod<String>('findName', {'imageId': imageId});
+  /// The argument [isVideo] is not required. However, providing it may improve performance. (especially when querying for video).
+  static Future<String?> findName(String imageId, { bool? isVideo }) async {
+    return _channel.invokeMethod<String>('findName', {'imageId': imageId, 'isVideo': isVideo});
   }
 
   /// Acquire the saved image path.
-  static Future<String?> findPath(String imageId) async {
-    return _channel.invokeMethod<String>('findPath', {'imageId': imageId});
+  /// The argument [isVideo] is not required. However, providing it may improve performance. (especially when querying for video).
+  static Future<String?> findPath(String imageId, { bool? isVideo }) async {
+    return _channel.invokeMethod<String>('findPath', {'imageId': imageId, 'isVideo': isVideo});
   }
 
   /// Acquire the saved image byte size.
-  static Future<int?> findByteSize(String imageId) async {
-    return _channel.invokeMethod<int>('findByteSize', {'imageId': imageId});
+  /// The argument [isVideo] is not required. However, providing it may improve performance. (especially when querying for video).
+  static Future<int?> findByteSize(String imageId, { bool? isVideo }) async {
+    return _channel.invokeMethod<int>('findByteSize', {'imageId': imageId, 'isVideo': isVideo});
   }
 
   /// Acquire the saved image mimeType.
-  static Future<String?> findMimeType(String imageId) async {
-    return _channel.invokeMethod<String>('findMimeType', {'imageId': imageId});
+  /// The argument [isVideo] is not required. However, providing it may improve performance. (especially when querying for video).
+  static Future<String?> findMimeType(String imageId, { bool? isVideo }) async {
+    return _channel.invokeMethod<String>('findMimeType', {'imageId': imageId, 'isVideo': isVideo});
   }
 }
 

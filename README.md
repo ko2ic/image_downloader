@@ -8,15 +8,20 @@ This will keep Exif(DateTimeOriginal) and GPS(Latitude, Longitude).
 ### ios
 
 Add the following keys to your Info.plist file, located in <project root>/ios/Runner/Info.plist:
-  
-  * NSPhotoLibraryUsageDescription - Specifies the reason for your app to access the user’s photo library. This is called ```Privacy - Photo Library Usage Description``` in the visual editor.
-  * NSPhotoLibraryAddUsageDescription - Specifies the reason for your app to get write-only access to the user’s photo library. This is called ```Privacy - Photo Library Additions Usage Description``` in the visual editor.
-  
+
+* NSPhotoLibraryUsageDescription - Specifies the reason for your app to access the user’s photo library. This is called ```Privacy - Photo Library Usage Description``` in the visual editor.
+* NSPhotoLibraryAddUsageDescription - Specifies the reason for your app to get write-only access to the user’s photo library. This is called ```Privacy - Photo Library Additions Usage Description``` in the visual editor.
+
 ### Android
 
-Add this permission in ```AndroidManifest.xml```. (If you call ```AndroidDestinationType#inExternalFilesDir()```, This setting is not necessary.)
+Add these permissions in ```AndroidManifest.xml```. 
 
 ```xml
+<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+<uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+<uses-permission android:name="android.permission.INTERNET" />
+
+<!-- If your application only targets API level 33 and above, this is not necessary -->
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 ```
 
@@ -60,7 +65,7 @@ Three directories by default are provided.
 * AndroidDestinationType.directoryDCIM -> Environment.DIRECTORY_DCIM on Android
 * AndroidDestinationType.directoryMovies -> Environment.DIRECTORY_MOVIES on Android
 
-In addition, there is also custom. 
+In addition, there is also custom.
 
 For example, the following sources is stored in ```/storage/emulated/0/sample/custom/sample.gif```.       
 (Depends on the device.)
@@ -73,8 +78,8 @@ await ImageDownloader.downloadImage(url,
 ```
 
 For example, the following sources is stored in ```/storage/emulated/0/Android/data/<applicationId>/files/sample/custom/sample.gif```by calling ```inExternalFilesDir()``` .    
-(Depends on the device.) 
- 
+(Depends on the device.)
+
 ```dart
  await ImageDownloader.downloadImage(url,
                                      destination: AndroidDestinationType.custom('sample')
@@ -82,7 +87,7 @@ For example, the following sources is stored in ```/storage/emulated/0/Android/d
                                      ..subDirectory("custom/sample.gif"),
          );
 ```
- 
+
 Note: ```inExternalFilesDir()``` will not require ```WRITE_EXTERNAL_STORAGE``` permission, but downloaded images will also be deleted when uninstalling.
 
 
@@ -137,7 +142,7 @@ setState(() {
 ## Preview
 
 There is a ```open``` method to be able to immediately preview the download file.   
-If you call it, in the case of ios, a preview screen using UIDocumentInteractionController is displayed. In case of Android, it is displayed by Intent.    
+If you call it, in the case of ios, a preview screen using UIDocumentInteractionController is displayed. In case of Android, it is displayed by Intent.
 
 ```dart
 var imageId = await ImageDownloader.downloadImage(url);
@@ -174,7 +179,7 @@ Add ```provider_paths.xml```  in ```android/app/src/main/res/xml/``` .
 
 ### downloadImage()
 
-You can determine the type of error with ```PlatformException#code```.   
+You can determine the type of error with ```PlatformException#code```.
 
 In the case of HTTP status error, the code is stored.   
 In the case of the file format is not supported, ```unsupported_file``` is stored.   
