@@ -408,8 +408,6 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                         .getMimeTypeFromExtension(newFile.extension) ?: ""
                     val imageId = saveToDatabase(newFile, mimeType ?: newMimeType, inPublicDir)
 
-                    Log.d("ImageId", "image id: $imageId")
-
                     result.success(imageId)
                 }
             })
