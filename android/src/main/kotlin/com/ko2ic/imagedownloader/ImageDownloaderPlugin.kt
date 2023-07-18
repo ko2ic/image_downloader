@@ -320,6 +320,7 @@ class ImageDownloaderPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             downloader.execute(onNext = {
                 Log.d(LOGGER_TAG, it.result.toString())
                 when (it) {
+                    is Downloader.DownloadStatus.Successful -> Log.d(LOGGER_TAG, it.reason)
                     is Downloader.DownloadStatus.Failed -> Log.d(LOGGER_TAG, it.reason)
                     is Downloader.DownloadStatus.Paused -> Log.d(LOGGER_TAG, it.reason)
                     is Downloader.DownloadStatus.Running -> {
