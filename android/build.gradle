@@ -27,6 +27,20 @@ apply plugin: 'kotlin-android'
 android {
     compileSdkVersion 33
 
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+
+    // Conditional for compatibility with AGP <4.2.
+    if (project.android.hasProperty("namespace")) {
+        namespace 'com.ko2ic.imagedownloader'
+    }
+    
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
     }
